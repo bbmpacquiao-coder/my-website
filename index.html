@@ -2,154 +2,82 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<title>Ultimate Money Game</title>
+<title>Ultra Smooth Game</title>
 
 <style>
 html, body {
   margin: 0;
-  height: 100%;
   overflow: hidden;
-  font-family: Arial;
   background: linear-gradient(#5c94fc, #cce6ff);
+  font-family: Arial;
 }
 
-/* CENTER */
-.container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-/* LOGIN */
-.loginBox {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 85%;
-  max-width: 320px;
-  text-align: center;
-}
-
-input {
-  font-size: 16px;
-  padding: 14px;
-  width: 95%;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: none;
-}
-
-button {
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  font-size: 16px;
-  width: 100%;
-  margin-top: 10px;
-}
-
-/* GAME */
 canvas {
+  display: block;
+  margin: auto;
   background: #87ceeb;
   border-radius: 10px;
-  touch-action: none;
   width: 90vw;
   max-width: 350px;
-  height: auto;
+  touch-action: none;
 }
-
-.hidden { display: none; }
-
-#actions {
-  width: 90%;
-  max-width: 350px;
-}
-
-.restart { background: #4CAF50; color: white; }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<!-- LOGIN -->
-<div id="loginScreen" class="loginBox">
-  <h3>Login</h3>
-  <input id="email" placeholder="Enter email">
-  <button ontouchstart="login()">Start Game</button>
-</div>
-
-<!-- GAME -->
-<div id="gameUI" class="hidden">
-  <canvas id="game" width="350" height="500"></canvas>
-  <div id="actions"></div>
-</div>
-
-</div>
+<canvas id="game" width="350" height="500"></canvas>
 
 <script>
-let currentUser = localStorage.getItem("currentUser");
-
-// LOGIN
-function login(){
-  let email = document.getElementById("email").value;
-  if(!email) return alert("Enter email!");
-
-  currentUser = email;
-  localStorage.setItem("currentUser", email);
-
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("gameUI").classList.remove("hidden");
-
-  startGame();
-}
-
-// AUTO LOGIN
-if(currentUser){
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("gameUI").classList.remove("hidden");
-  startGame();
-}
-
-// GAME
-function startGame(){
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const actions = document.getElementById("actions");
+
+// ===== ULTRA SMOOTH PHYSICS =====
+let GRAVITY = 900;        // pixels/sec²
+let JUMP_FORCE = -300;    // jump impulse
+let DRAG = 0.98;          // air resistance
+let SPEED = 120;          // obstacle speed
 
 let player, obstacles, score, gameStarted, gameOver;
 
-// RESET GAME (ANDROID FIX)
+// RESET
 function reset(){
-  player = {x:50,y:200,velocity:0};
+  player = {
+    x: 60,
+    y: 200,
+    velocity: 0
+  };
   obstacles = [];
   score = 0;
   gameStarted = false;
   gameOver = false;
-  actions.innerHTML = "";
 }
 reset();
 
 // SPAWN
 setInterval(()=>{
   if(!gameStarted || gameOver) return;
-  obstacles.push({
-    x:350,
-    w:40,
-    top:Math.random()*200+50
-  });
-},1500);
 
-// LOOP
-function update(){
-  ctx.clearRect(0,0,350,500);
+  let gap = 140;
+  let top = Math.random()*200 + 50;
+
+  obstacles.push({
+    x: canvas.width,
+    w: 40,
+    top: top,
+    bottom: canvas.height - (top + gap)
+  });
+}, 1600);
+
+// TIME BASED LOOP
+let lastTime = 0;
+
+function update(time){
+  let dt = (time - lastTime) / 1000; // seconds
+  lastTime = time;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(!gameStarted){
     ctx.fillText("TAP TO START",110,250);
@@ -158,79 +86,73 @@ function update(){
   }
 
   if(gameOver){
-    ctx.fillText("GAME OVER",120,220);
-    ctx.fillText("Score: "+score,120,250);
-
-    if(actions.innerHTML===""){
-        
-    }
-
+    ctx.fillText("GAME OVER",120,230);
+    ctx.fillText("Tap to Restart",100,260);
     requestAnimationFrame(update);
     return;
   }
 
-  player.velocity += 0.4;
-  player.y += player.velocity;
+  // ===== PHYSICS =====
+  player.velocity += GRAVITY * dt;
+  player.velocity *= DRAG; // smooth resistance
+  player.y += player.velocity * dt;
 
+  // PLAYER
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, 15, 20);
 
+  // OBSTACLES
   obstacles.forEach(o=>{
-    o.x -= 2;
+    o.x -= SPEED * dt;
 
     ctx.fillStyle = "brown";
     ctx.fillRect(o.x,0,o.w,o.top);
-    ctx.fillRect(o.x,o.top+130,o.w,500);
+    ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
+    // collision
     if(player.x < o.x+o.w && player.x+15 > o.x &&
-      (player.y < o.top || player.y+20 > o.top+130)){
+      (player.y < o.top || player.y+20 > canvas.height-o.bottom)){
         gameOver = true;
     }
   });
 
-  if(player.y > 500 || player.y < 0){
+  // bounds
+  if(player.y > canvas.height || player.y < 0){
     gameOver = true;
   }
 
-  score++;
-  ctx.fillText("Score: "+score,10,20);
+  score += dt * 60;
+  ctx.fillText("Score: " + Math.floor(score), 10, 20);
 
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL (ANDROID)
- function tap(){
+// TAP CONTROL (ULTRA SMOOTH)
+function tap(){
   if(!gameStarted){
     gameStarted = true;
     return;
   }
 
-  // 🔥 NEW: TAP TO RESTART
   if(gameOver){
     reset();
     return;
   }
 
-  player.velocity = -7;
+  // smooth impulse (not instant jerk)
+  player.velocity += JUMP_FORCE;
 }
 
-// RESTART BUTTON FIX
-window.restartGame = function(){
-  reset();
-};
-
-// EVENTS (ANDROID FIRST)
-canvas.addEventListener("touchstart", function(e){
+// EVENTS
+canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
 }, {passive:false});
 
 canvas.addEventListener("click", tap);
 
-// START LOOP
-update();
-
-}
+// START
+requestAnimationFrame(update);
 </script>
 
 </body>
