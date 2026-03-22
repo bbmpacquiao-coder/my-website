@@ -11,16 +11,32 @@ html, body {
   overflow: hidden;
   background: linear-gradient(#5c94fc, #cce6ff);
   font-family: Arial;
+  text-align: center;
 }
 
 canvas {
   display: block;
-  margin: auto;
+  margin: 10px auto;
   background: #87ceeb;
   border-radius: 10px;
   width: 90vw;
   max-width: 350px;
   touch-action: none;
+}
+
+/* DONATE BUTTON */
+#donateBtn {
+  position: fixed;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  background: #ff4b2b;
+  color: white;
+  z-index: 10;
 }
 </style>
 </head>
@@ -29,15 +45,18 @@ canvas {
 
 <canvas id="game" width="350" height="500"></canvas>
 
+<button id="donateBtn">💰 Support Me</button>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const donateBtn = document.getElementById("donateBtn");
 
-// ===== ULTRA EASY PHYSICS =====
-const GRAVITY = 400;      // slow fall
-const JUMP = -150;        // very soft tap
-const DRAG = 0.90;        // floaty
-const SPEED = 90;         // slow obstacles
+// ===== EASY PHYSICS =====
+const GRAVITY = 400;
+const JUMP = -150;
+const DRAG = 0.90;
+const SPEED = 90;
 
 let player, obstacles, score, started, over;
 
@@ -51,11 +70,11 @@ function reset(){
 }
 reset();
 
-// SPAWN OBSTACLES (EASIER GAP)
+// SPAWN
 setInterval(()=>{
   if(!started || over) return;
 
-  let gap = 170; // bigger gap = easier
+  let gap = 170;
   let top = Math.random()*180 + 60;
 
   obstacles.push({
@@ -66,7 +85,7 @@ setInterval(()=>{
   });
 }, 1800);
 
-// TIME LOOP
+// LOOP
 let last = 0;
 
 function update(t){
@@ -88,12 +107,11 @@ function update(t){
     return;
   }
 
-  // ===== SMOOTH PHYSICS =====
+  // PHYSICS
   player.v += GRAVITY * dt;
   player.v *= DRAG;
   player.y += player.v * dt;
 
-  // LIMIT TOP (no instant death)
   if(player.y < 0) player.y = 0;
 
   // PLAYER
@@ -108,14 +126,12 @@ function update(t){
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
-    // collision (more forgiving)
     if(player.x < o.x+o.w && player.x+15 > o.x &&
       (player.y < o.top-5 || player.y+20 > canvas.height-o.bottom+5)){
         over = true;
     }
   });
 
-  // GROUND ONLY death
   if(player.y > canvas.height){
     over = true;
   }
@@ -126,7 +142,7 @@ function update(t){
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL (SUPER STABLE)
+// TAP CONTROL
 function tap(){
   if(!started){
     started = true;
@@ -138,17 +154,28 @@ function tap(){
     return;
   }
 
-  // 🔥 KEY FIX: no stacking velocity
   player.v = JUMP;
 }
 
-// ANDROID EVENTS
+// ANDROID TOUCH
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
 }, {passive:false});
 
 canvas.addEventListener("click", tap);
+
+// DONATE BUTTON FIX (ANDROID SAFE)
+function openDonate(){
+  window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
+}
+
+donateBtn.addEventListener("touchstart", function(e){
+  e.preventDefault();
+  openDonate();
+});
+
+donateBtn.addEventListener("click", openDonate);
 
 // START
 requestAnimationFrame(update);
