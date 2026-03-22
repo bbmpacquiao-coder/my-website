@@ -45,13 +45,17 @@ button {
 
 <br>
 <button class="donate" onclick="donate()">❤️ Support Me</button>
+ 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 let player, obstacles, score, gameStarted, gameOver;
-let gravity = 0.4;   // easier
+let gravity = 0.4;
 let jump = -7;
+
+let speed = 2;
+let bestScore = localStorage.getItem("bestScore") || 0;
 
 function resetGame() {
   player = { x: 50, y: 200, size: 20, velocity: 0 };
@@ -59,21 +63,24 @@ function resetGame() {
   score = 0;
   gameStarted = false;
   gameOver = false;
+  speed = 2;
 }
 
 resetGame();
 
 function createObstacle() {
-  let height = Math.random() * 150 + 80; // easier gaps
+  let gap = 150 - Math.min(score / 10, 60); // gap gets smaller = harder
+  let height = Math.random() * 150 + 80;
+
   obstacles.push({
     x: canvas.width,
     width: 30,
     top: height,
-    bottom: canvas.height - height - 150
+    bottom: canvas.height - height - gap
   });
 }
 
-setInterval(createObstacle, 1800); // slower = easier
+setInterval(createObstacle, 1800);
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -82,17 +89,30 @@ function update() {
   if (!gameStarted && !gameOver) {
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
-    ctx.fillText("Click to Start", 100, 250);
+    ctx.fillText("Click to Start", 100, 240);
+    ctx.fillText("Beat High Score: " + bestScore, 70, 280);
     requestAnimationFrame(update);
     return;
   }
 
-  // GAME OVER SCREEN
+  // GAME OVER
   if (gameOver) {
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem("bestScore", bestScore);
+    }
+
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
-    ctx.fillText("Game Over! Score: " + score, 70, 230);
-    ctx.fillText("Click to Restart", 90, 270);
+    ctx.fillText("Game Over!", 110, 200);
+    ctx.fillText("Score: " + score, 120, 240);
+    ctx.fillText("Best: " + bestScore, 120, 270);
+    ctx.fillText("Click to Restart", 80, 320);
+
+    // 💰 soft donation message
+    ctx.font = "16px Arial";
+    ctx.fillText("Enjoyed? Support ❤️ below", 80, 360);
+
     requestAnimationFrame(update);
     return;
   }
@@ -101,6 +121,9 @@ function update() {
   player.velocity += gravity;
   player.y += player.velocity;
 
+  // smooth cap
+  if (player.velocity > 10) player.velocity = 10;
+
   // player
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.size, player.size);
@@ -108,7 +131,7 @@ function update() {
   // obstacles
   for (let i = 0; i < obstacles.length; i++) {
     let obs = obstacles[i];
-    obs.x -= 2; // slower speed
+    obs.x -= speed;
 
     ctx.fillStyle = "red";
     ctx.fillRect(obs.x, 0, obs.width, obs.top);
@@ -134,11 +157,15 @@ function update() {
     gameOver = true;
   }
 
-  // score
+  // increase difficulty
   score++;
+  if (score % 200 === 0) speed += 0.3;
+
+  // UI
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
   ctx.fillText("Score: " + score, 10, 30);
+  ctx.fillText("Best: " + bestScore, 220, 30);
 
   requestAnimationFrame(update);
 }
@@ -170,7 +197,9 @@ update();
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
-</script>
+</script> 
+ 
+ 
  
  
 
