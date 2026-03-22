@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -22,33 +22,18 @@ canvas {
 
 #actions { margin-top: 10px; }
 
-button {
-  padding: 10px 15px;
-  margin: 5px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-input {
+button, input {
   padding: 10px;
+  margin: 5px;
   border-radius: 8px;
   border: none;
-  margin: 5px;
 }
-
-.revive { background: gold; }
-.restart { background: #333; color: white; }
-.donate { background: #ff4b2b; color: white; }
-.skin { background: purple; color: white; }
-.reward { background: green; color: white; }
-.logout { background: black; color: white; }
 
 .leaderboard {
   background: rgba(0,0,0,0.2);
   padding: 10px;
-  border-radius: 10px;
   margin: 10px;
+  border-radius: 10px;
 }
 </style>
 </head>
@@ -69,35 +54,24 @@ const actions = document.getElementById("actions");
 const userInfo = document.getElementById("userInfo");
 const leaderboardDiv = document.getElementById("leaderboard");
 
-// 🎧 AUDIO FIX
-let audioCtx = null;
-
+// AUDIO
+let audioCtx;
 function initAudio(){
   if(!audioCtx){
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  if(audioCtx.state === "suspended"){
-    audioCtx.resume();
-  }
+  if(audioCtx.state==="suspended") audioCtx.resume();
 }
-
-function playSound(freq, duration){
+function playSound(f,t){
   if(!audioCtx) return;
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.type = "square";
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
+  let o=audioCtx.createOscillator();
+  let g=audioCtx.createGain();
+  o.frequency.value=f;
+  g.gain.value=0.2;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+t);
+  o.stop(audioCtx.currentTime+t);
 }
 
 // ACCOUNT
@@ -105,14 +79,9 @@ let currentUser = localStorage.getItem("currentUser");
 
 function getUserData(){
   return JSON.parse(localStorage.getItem("user_"+currentUser)) || {
-    coins:0,
-    bestScore:0,
-    skin:"red",
-    doubleCoins:false,
-    lastReward:0
+    coins:0,bestScore:0,skin:"red",lastReward:0
   };
 }
-
 function saveUserData(data){
   localStorage.setItem("user_"+currentUser, JSON.stringify(data));
 }
@@ -121,23 +90,19 @@ function saveUserData(data){
 function getLeaderboard(){
   return JSON.parse(localStorage.getItem("leaderboard")) || [];
 }
-
-function saveScore(name, score){
-  let board = getLeaderboard();
-  board.push({name, score});
-  board.sort((a,b)=>b.score-a.score);
-  board = board.slice(0,5);
-  localStorage.setItem("leaderboard", JSON.stringify(board));
+function saveScore(name,score){
+  let b=getLeaderboard();
+  b.push({name,score});
+  b.sort((a,b)=>b.score-a.score);
+  b=b.slice(0,5);
+  localStorage.setItem("leaderboard",JSON.stringify(b));
   renderLeaderboard();
 }
-
 function renderLeaderboard(){
-  let board = getLeaderboard();
-  let html = "<h3>🏆 Leaderboard</h3>";
-  board.forEach((p,i)=>{
-    html += `<div>${i+1}. ${p.name} - ${p.score}</div>`;
-  });
-  leaderboardDiv.innerHTML = html;
+  let b=getLeaderboard();
+  let html="<h3>🏆 Leaderboard</h3>";
+  b.forEach((p,i)=> html+=`<div>${i+1}. ${p.name} - ${p.score}</div>`);
+  leaderboardDiv.innerHTML=html;
 }
 
 // LOGIN
@@ -147,167 +112,172 @@ function showLogin(){
     <button onclick="login()">Login</button>
   `;
 }
-
 function login(){
-  const email = document.getElementById("email").value;
+  let email=document.getElementById("email").value;
   if(!email) return alert("Enter email!");
-  currentUser = email;
-  localStorage.setItem("currentUser", email);
+  currentUser=email;
+  localStorage.setItem("currentUser",email);
   actions.innerHTML="";
-  updateUserInfo();
 }
-
-function logout(){
-  localStorage.removeItem("currentUser");
-  location.reload();
-}
-
 function updateUserInfo(){
-  userInfo.innerHTML = currentUser 
-    ? "👤 " + currentUser + " <button class='logout' onclick='logout()'>Logout</button>"
-    : "";
+  userInfo.innerHTML = currentUser ? "👤 "+currentUser : "";
 }
 
 // GAME
 let player, obstacles, coinsArr;
-let score, gameStarted, gameOver, speed;
+let score=0, gameStarted=false, gameOver=false;
 
 function resetGame(){
   player={x:50,y:200,size:20,velocity:0};
   obstacles=[];
   coinsArr=[];
   score=0;
-  speed=2;
   gameStarted=false;
   gameOver=false;
   actions.innerHTML="";
 }
 resetGame();
 
-// DAILY REWARD (20)
-function dailyReward(){
-  let data = getUserData();
-  let now = Date.now();
-
-  if(now - data.lastReward > 86400000){
-    data.coins += 20;
-    data.lastReward = now;
-    saveUserData(data);
-    alert("🎁 You got 20 coins!");
-    playSound(900,0.2);
-  } else {
-    alert("Come back tomorrow!");
-  }
-}
-
 // SPAWN
-function createObstacle(){
-  let gap=150-Math.min(score/10,70);
-  let h=Math.random()*150+80;
-  obstacles.push({x:350,w:40,top:h,bottom:500-h-gap});
-}
-function createCoin(){
-  coinsArr.push({x:350,y:Math.random()*400+50,size:10});
-}
-setInterval(createObstacle,1800);
-setInterval(createCoin,1200);
+setInterval(()=>obstacles.push({
+  x:350,w:40,
+  top:Math.random()*150+80,
+  bottom:500-(Math.random()*150+80)-120
+}),1800);
+
+setInterval(()=>coinsArr.push({
+  x:350,y:Math.random()*400+50
+}),1200);
 
 // LOOP
 function update(){
   ctx.clearRect(0,0,350,500);
 
+  // LOGIN SCREEN
   if(!currentUser){
+    ctx.fillText("Login First",120,250);
     showLogin();
+    requestAnimationFrame(update);
     return;
   }
 
-  let data = getUserData();
+  let data=getUserData();
 
+  // START SCREEN (FIXED)
   if(!gameStarted){
-    ctx.fillText("Click to Start",110,240);
-    ctx.fillText("Coins:"+data.coins,130,270);
-    ctx.fillText("Best:"+data.bestScore,130,300);
+    ctx.fillText("Click to Start",110,230);
+    ctx.fillText("Coins: "+data.coins,120,260);
+    ctx.fillText("Best: "+data.bestScore,120,290);
     showMenu();
     requestAnimationFrame(update);
     return;
   }
 
+  // GAME OVER
   if(gameOver){
-    drawGameOver(data);
+    ctx.fillText("Game Over",120,220);
+    ctx.fillText("Score: "+score,120,250);
+    saveScore(currentUser,score);
+
+    if(actions.innerHTML===""){
+      actions.innerHTML=`
+        <button onclick="revive()">❤️ Revive (10)</button>
+        <button onclick="resetGame()">🔁 Restart</button>
+      `;
+    }
+
     requestAnimationFrame(update);
     return;
   }
 
+  // PHYSICS
   player.velocity+=0.4;
   player.y+=player.velocity;
 
-  ctx.fillStyle = data.skin==="gold" ? "gold" : "red";
   ctx.fillRect(player.x,player.y,20,20);
 
-  for(let o of obstacles){
-    o.x-=speed;
-
-    ctx.fillStyle="brown";
+  obstacles.forEach(o=>{
+    o.x-=2;
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,500-o.bottom,o.w,o.bottom);
 
     if(player.x<o.x+o.w && player.x+20>o.x &&
       (player.y<o.top || player.y+20>500-o.bottom)){
-        endGame(data);
+        gameOver=true;
+        playSound(150,0.4);
     }
-  }
+  });
 
-  for(let i=0;i<coinsArr.length;i++){
-    let c=coinsArr[i];
-    c.x-=speed;
-
-    ctx.fillStyle="gold";
+  coinsArr.forEach((c,i)=>{
+    c.x-=2;
     ctx.beginPath();
     ctx.arc(c.x,c.y,8,0,Math.PI*2);
     ctx.fill();
 
     if(player.x<c.x+10 && player.x+20>c.x &&
        player.y<c.y+10 && player.y+20>c.y){
-        data.coins += data.doubleCoins ? 2 : 1;
-        playSound(800,0.1);
+        data.coins++;
         coinsArr.splice(i,1);
-        i--;
+        playSound(800,0.1);
     }
-  }
+  });
 
   if(player.y>500 || player.y<0){
-    endGame(data);
+    gameOver=true;
   }
 
   score++;
   ctx.fillText("Score:"+score,10,20);
-  ctx.fillText("Coins:"+data.coins,250,20);
+
+  if(score>data.bestScore){
+    data.bestScore=score;
+  }
 
   saveUserData(data);
   requestAnimationFrame(update);
 }
 
-// GAME OVER
-function drawGameOver(data){
-  ctx.fillText("Game Over",120,200);
-  ctx.fillText("Score:"+score,120,230);
-
-  saveScore(currentUser, score);
-
+// MENU
+function showMenu(){
   if(actions.innerHTML===""){
-    actions.innerHTML = `
-      <button class="revive" onclick="revive(10)">❤️ Revive (10)</button>
-      <button class="donate" onclick="donate()">💰 Support</button>
-      <button class="restart" onclick="restart()">🔁 Restart</button>
+    actions.innerHTML=`
+      <button onclick="dailyReward()">🎁 Daily (20)</button>
+      <button onclick="buySkin()">🎨 Skin (100)</button>
     `;
   }
 }
 
-// END
-function endGame(data){
-  gameOver=true;
-  playSound(150,0.4);
-  saveUserData(data);
+// FEATURES
+function dailyReward(){
+  let d=getUserData();
+  let now=Date.now();
+  if(now-d.lastReward>86400000){
+    d.coins+=20;
+    d.lastReward=now;
+    saveUserData(d);
+    alert("20 coins!");
+  }
+}
+
+function buySkin(){
+  let d=getUserData();
+  if(d.coins>=100){
+    d.coins-=100;
+    d.skin="gold";
+    saveUserData(d);
+  }
+}
+
+function revive(){
+  let d=getUserData();
+  if(d.coins>=10){
+    d.coins-=10;
+    gameOver=false;
+    player.y=200;
+    player.velocity=0;
+    actions.innerHTML="";
+    saveUserData(d);
+  }
 }
 
 // CONTROLS
@@ -330,29 +300,6 @@ document.addEventListener("keydown",e=>{
   if(e.code==="Space") handle();
 });
 
-// CORE
-function revive(cost){
-  let data = getUserData();
-  if(data.coins>=cost){
-    data.coins-=cost;
-    gameOver=false;
-    player.y=200;
-    player.velocity=0;
-    actions.innerHTML="";
-    saveUserData(data);
-    playSound(700,0.2);
-  } else {
-    donate();
-  }
-}
-
-function restart(){ resetGame(); }
-
-function donate(){
-  alert("Thanks ❤️");
-  window.location.href="https://bbmpacquiao-coder.github.io/morris-donation/";
-}
-
 // INIT
 updateUserInfo();
 renderLeaderboard();
@@ -360,8 +307,7 @@ update();
 </script>
 
 </body>
-</html>
+</html>  
  
- 
-  
+   
  
