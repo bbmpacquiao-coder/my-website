@@ -162,9 +162,7 @@ function update(){
     ctx.fillText("Score: "+score,120,250);
 
     if(actions.innerHTML===""){
-      actions.innerHTML = `
-        <button class="restart" ontouchstart="restartGame()">🔁 Restart</button>
-      `;
+        
     }
 
     requestAnimationFrame(update);
@@ -201,12 +199,18 @@ function update(){
 }
 
 // TAP CONTROL (ANDROID)
-function tap(){
+ function tap(){
   if(!gameStarted){
     gameStarted = true;
     return;
   }
-  if(gameOver) return;
+
+  // 🔥 NEW: TAP TO RESTART
+  if(gameOver){
+    reset();
+    return;
+  }
+
   player.velocity = -7;
 }
 
