@@ -1,3 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endless Jump Game</title>
+
+<style>
+body {
+  margin: 0;
+  background: #0f2027;
+  color: white;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  background: #203a43;
+  display: block;
+  margin: 20px auto;
+  border-radius: 10px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.donate {
+  background: #ff4b2b;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🚀 Endless Jump Game</h2>
+<p>Tap or press SPACE to start & jump</p>
+
+<canvas id="game" width="350" height="500"></canvas>
+
+<br>
+<button class="donate" onclick="donate()">❤️ Support Me</button>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -15,6 +63,7 @@ let jump = -8;
 let obstacles = [];
 let score = 0;
 let gameStarted = false;
+let obstacleTimer = null;
 
 function createObstacle() {
   let height = Math.random() * 200 + 50;
@@ -29,32 +78,28 @@ function createObstacle() {
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // START SCREEN
   if (!gameStarted) {
     ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
+    ctx.font = "18px Arial";
     ctx.fillText("Click or Press SPACE to Start", 40, 250);
     requestAnimationFrame(update);
     return;
   }
 
-  // physics
   player.velocity += gravity;
   player.y += player.velocity;
 
-  // draw player
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.size, player.size);
 
-  // obstacles
-  obstacles.forEach((obs, i) => {
+  for (let i = 0; i < obstacles.length; i++) {
+    let obs = obstacles[i];
     obs.x -= 3;
 
     ctx.fillStyle = "red";
     ctx.fillRect(obs.x, 0, obs.width, obs.top);
     ctx.fillRect(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
 
-    // collision
     if (
       player.x < obs.x + obs.width &&
       player.x + player.size > obs.x &&
@@ -63,15 +108,16 @@ function update() {
       endGame();
     }
 
-    if (obs.x < -30) obstacles.splice(i, 1);
-  });
+    if (obs.x < -30) {
+      obstacles.splice(i, 1);
+      i--;
+    }
+  }
 
-  // ground/ceiling
   if (player.y > canvas.height || player.y < 0) {
     endGame();
   }
 
-  // score
   score++;
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
@@ -82,14 +128,13 @@ function update() {
 
 function endGame() {
   alert("Game Over! Score: " + score);
-  document.location.reload();
+  location.reload();
 }
 
-// controls
 function startGame() {
   if (!gameStarted) {
     gameStarted = true;
-    setInterval(createObstacle, 1500);
+    obstacleTimer = setInterval(createObstacle, 1500);
   }
   player.velocity = jump;
 }
@@ -100,13 +145,14 @@ document.addEventListener("keydown", e => {
 
 canvas.addEventListener("click", startGame);
 
-// start loop
 update();
 
-// donation
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
-</script>  
-  
-  
+</script>
+
+</body>
+</html> 
+ 
+      
