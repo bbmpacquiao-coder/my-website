@@ -57,11 +57,9 @@ input {
 
 <h2>🍄 Ultimate Money Game</h2>
 <div id="userInfo"></div>
-
 <div class="leaderboard" id="leaderboard"></div>
 
 <canvas id="game" width="350" height="500"></canvas>
-
 <div id="actions"></div>
 
 <script>
@@ -70,6 +68,37 @@ const ctx = canvas.getContext("2d");
 const actions = document.getElementById("actions");
 const userInfo = document.getElementById("userInfo");
 const leaderboardDiv = document.getElementById("leaderboard");
+
+// 🎧 AUDIO FIX
+let audioCtx = null;
+
+function initAudio(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(audioCtx.state === "suspended"){
+    audioCtx.resume();
+  }
+}
+
+function playSound(freq, duration){
+  if(!audioCtx) return;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "square";
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
 
 // ACCOUNT
 let currentUser = localStorage.getItem("currentUser");
@@ -143,7 +172,6 @@ function updateUserInfo(){
 let player, obstacles, coinsArr;
 let score, gameStarted, gameOver, speed;
 
-// RESET
 function resetGame(){
   player={x:50,y:200,size:20,velocity:0};
   obstacles=[];
@@ -166,6 +194,7 @@ function dailyReward(){
     data.lastReward = now;
     saveUserData(data);
     alert("🎁 You got 20 coins!");
+    playSound(900,0.2);
   } else {
     alert("Come back tomorrow!");
   }
@@ -198,7 +227,6 @@ function update(){
     ctx.fillText("Click to Start",110,240);
     ctx.fillText("Coins:"+data.coins,130,270);
     ctx.fillText("Best:"+data.bestScore,130,300);
-
     showMenu();
     requestAnimationFrame(update);
     return;
@@ -216,8 +244,7 @@ function update(){
   ctx.fillStyle = data.skin==="gold" ? "gold" : "red";
   ctx.fillRect(player.x,player.y,20,20);
 
-  for(let i=0;i<obstacles.length;i++){
-    let o=obstacles[i];
+  for(let o of obstacles){
     o.x-=speed;
 
     ctx.fillStyle="brown";
@@ -228,8 +255,6 @@ function update(){
       (player.y<o.top || player.y+20>500-o.bottom)){
         endGame(data);
     }
-
-    if(o.x<-40){ obstacles.splice(i,1); i--; }
   }
 
   for(let i=0;i<coinsArr.length;i++){
@@ -243,13 +268,11 @@ function update(){
 
     if(player.x<c.x+10 && player.x+20>c.x &&
        player.y<c.y+10 && player.y+20>c.y){
-        let gain = data.doubleCoins ? 2 : 1;
-        data.coins += gain;
+        data.coins += data.doubleCoins ? 2 : 1;
+        playSound(800,0.1);
         coinsArr.splice(i,1);
         i--;
     }
-
-    if(c.x<0){ coinsArr.splice(i,1); i--; }
   }
 
   if(player.y>500 || player.y<0){
@@ -257,9 +280,6 @@ function update(){
   }
 
   score++;
-  if(score%120===0) speed+=0.6;
-
-  ctx.fillStyle="black";
   ctx.fillText("Score:"+score,10,20);
   ctx.fillText("Coins:"+data.coins,250,20);
 
@@ -267,26 +287,10 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// MENU
-function showMenu(){
-  if(actions.innerHTML===""){
-    actions.innerHTML = `
-      <button class="reward" onclick="dailyReward()">🎁 Daily Reward (20)</button>
-      <button class="skin" onclick="buySkin()">🎨 Gold Skin (100)</button>
-      <button class="donate" onclick="donate()">💰 Donate</button>
-    `;
-  }
-}
-
 // GAME OVER
 function drawGameOver(data){
   ctx.fillText("Game Over",120,200);
   ctx.fillText("Score:"+score,120,230);
-
-  if(score>data.bestScore){
-    data.bestScore=score;
-    saveUserData(data);
-  }
 
   saveScore(currentUser, score);
 
@@ -302,17 +306,23 @@ function drawGameOver(data){
 // END
 function endGame(data){
   gameOver=true;
+  playSound(150,0.4);
   saveUserData(data);
 }
 
 // CONTROLS
 function handle(){
+  initAudio();
+
   if(!gameStarted){
     gameStarted=true;
     return;
   }
+
   if(gameOver) return;
+
   player.velocity=-7;
+  playSound(500,0.2);
 }
 
 canvas.addEventListener("click",handle);
@@ -330,27 +340,16 @@ function revive(cost){
     player.velocity=0;
     actions.innerHTML="";
     saveUserData(data);
+    playSound(700,0.2);
   } else {
     donate();
   }
 }
 
-function restart(){
-  resetGame();
-}
-
-function buySkin(){
-  let data = getUserData();
-  if(data.coins>=100){
-    data.coins-=100;
-    data.skin="gold";
-    saveUserData(data);
-    alert("🎨 Skin Unlocked!");
-  } else donate();
-}
+function restart(){ resetGame(); }
 
 function donate(){
-  alert("Thanks for supporting ❤️");
+  alert("Thanks ❤️");
   window.location.href="https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 
@@ -362,3 +361,7 @@ update();
 
 </body>
 </html>
+ 
+ 
+  
+ 
