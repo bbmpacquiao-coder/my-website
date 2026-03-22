@@ -1,28 +1,27 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Endless Jump Game</title>
+<title>Mario Style Endless Game</title>
 
 <style>
 body {
   margin: 0;
-  background: #0f2027;
-  color: white;
+  background: linear-gradient(#5c94fc, #cce6ff);
   text-align: center;
   font-family: Arial, sans-serif;
+  color: #222;
 }
 
 canvas {
-  background: #203a43;
+  background: #87ceeb;
   display: block;
   margin: 20px auto;
   border-radius: 10px;
 }
 
 button {
-  margin-top: 10px;
   padding: 10px 15px;
   border: none;
   border-radius: 8px;
@@ -38,8 +37,8 @@ button {
 
 <body>
 
-<h2>🚀 Endless Jump Game</h2>
-<p>Tap or press SPACE to start & jump</p>
+<h2>🍄 Mario Endless Jump</h2>
+<p>Click or press SPACE to jump</p>
 
 <canvas id="game" width="350" height="500"></canvas>
 
@@ -50,6 +49,7 @@ button {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+// GAME STATE
 let player, obstacles, score, gameStarted, gameOver;
 let gravity = 0.4;
 let jump = -7;
@@ -59,8 +59,8 @@ let bestScore = localStorage.getItem("bestScore") || 0;
 let particles = [];
 let shake = 0;
 
-// 🔊 WEB AUDIO (100% WORKING)
-let audioCtx = null;
+// 🔊 AUDIO (WebAudio - always works)
+let audioCtx;
 
 function initAudio() {
   if (!audioCtx) {
@@ -68,55 +68,43 @@ function initAudio() {
   }
 }
 
-function playJumpSound() {
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.type = "square";
-  osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.2);
+function playJump() {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "square";
+  o.frequency.setValueAtTime(500, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + 0.2);
 }
 
-function playHitSound() {
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.4);
+function playHit() {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(150, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + 0.4);
 }
 
-function playScoreSound() {
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.type = "triangle";
-  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.15);
+function playScore() {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(800, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + 0.15);
 }
 
 // RESET
@@ -139,7 +127,7 @@ function createObstacle() {
 
   obstacles.push({
     x: canvas.width,
-    width: 30,
+    width: 40,
     top: height,
     bottom: canvas.height - height - gap
   });
@@ -151,8 +139,7 @@ setInterval(createObstacle, 1800);
 function createExplosion(x, y) {
   for (let i = 0; i < 20; i++) {
     particles.push({
-      x: x,
-      y: y,
+      x, y,
       vx: (Math.random() - 0.5) * 5,
       vy: (Math.random() - 0.5) * 5,
       life: 30
@@ -177,21 +164,33 @@ function updateParticles() {
   }
 }
 
+// DRAW BRICKS
+function drawBricks(x, y, width, height) {
+  for (let i = 0; i < height; i += 20) {
+    for (let j = 0; j < width; j += 20) {
+      ctx.fillStyle = "#8B4513";
+      ctx.fillRect(x + j, y + i, 18, 18);
+      ctx.strokeStyle = "#5a2e0c";
+      ctx.strokeRect(x + j, y + i, 18, 18);
+    }
+  }
+}
+
 // GAME LOOP
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (shake > 0) {
     ctx.save();
-    ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
+    ctx.translate(Math.random()*10-5, Math.random()*10-5);
     shake--;
   }
 
   if (!gameStarted && !gameOver) {
-    ctx.fillStyle = "white";
+    ctx.fillStyle = "#000";
     ctx.font = "20px Arial";
-    ctx.fillText("Click to Start", 100, 240);
-    ctx.fillText("Best: " + bestScore, 120, 280);
+    ctx.fillText("Click to Start", 100, 250);
+    ctx.fillText("Best: " + bestScore, 120, 290);
     requestAnimationFrame(update);
     return;
   }
@@ -202,15 +201,11 @@ function update() {
       localStorage.setItem("bestScore", bestScore);
     }
 
-    ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText("Game Over!", 110, 200);
-    ctx.fillText("Score: " + score, 120, 240);
-    ctx.fillText("Best: " + bestScore, 120, 270);
-    ctx.fillText("Click to Restart", 80, 320);
-
-    ctx.font = "16px Arial";
-    ctx.fillText("Support ❤️ below if you enjoyed!", 60, 360);
+    ctx.fillStyle = "#000";
+    ctx.fillText("Game Over!", 110, 220);
+    ctx.fillText("Score: " + score, 120, 260);
+    ctx.fillText("Best: " + bestScore, 120, 290);
+    ctx.fillText("Click to Restart", 80, 330);
 
     updateParticles();
 
@@ -219,34 +214,40 @@ function update() {
     return;
   }
 
+  // physics
   player.velocity += gravity;
   player.y += player.velocity;
 
-  let pulse = Math.sin(Date.now() * 0.01) * 2;
-  ctx.fillStyle = "lime";
-  ctx.fillRect(player.x, player.y, player.size + pulse, player.size + pulse);
+  // 🍄 Mario-style player
+  let size = player.size;
+  ctx.fillStyle = "red";
+  ctx.fillRect(player.x, player.y, size, size);
+  ctx.fillStyle = "darkred";
+  ctx.fillRect(player.x, player.y, size, size/3);
+  ctx.fillStyle = "#ffd6a5";
+  ctx.fillRect(player.x, player.y+size/3, size, size/2);
 
+  // obstacles
   for (let i = 0; i < obstacles.length; i++) {
     let obs = obstacles[i];
     obs.x -= speed;
 
-    ctx.fillStyle = "red";
-    ctx.fillRect(obs.x, 0, obs.width, obs.top);
-    ctx.fillRect(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
+    drawBricks(obs.x, 0, obs.width, obs.top);
+    drawBricks(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
 
     if (
       player.x < obs.x + obs.width &&
-      player.x + player.size > obs.x &&
-      (player.y < obs.top || player.y + player.size > canvas.height - obs.bottom)
+      player.x + size > obs.x &&
+      (player.y < obs.top || player.y + size > canvas.height - obs.bottom)
     ) {
       gameOver = true;
       shake = 10;
-      playHitSound();
+      playHit();
       createExplosion(player.x, player.y);
     }
 
-    if (obs.x < -30) {
-      obstacles.splice(i, 1);
+    if (obs.x < -40) {
+      obstacles.splice(i,1);
       i--;
     }
   }
@@ -254,17 +255,15 @@ function update() {
   if (player.y > canvas.height || player.y < 0) {
     gameOver = true;
     shake = 10;
-    playHitSound();
+    playHit();
     createExplosion(player.x, player.y);
   }
 
   score++;
-
-  if (score % 50 === 0) playScoreSound();
+  if (score % 50 === 0) playScore();
   if (score % 200 === 0) speed += 0.3;
 
-  ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
+  ctx.fillStyle = "#000";
   ctx.fillText("Score: " + score, 10, 30);
   ctx.fillText("Best: " + bestScore, 220, 30);
 
@@ -277,7 +276,7 @@ function update() {
 
 // CONTROLS
 function handleInput() {
-  initAudio(); // 🔥 unlock audio
+  initAudio();
 
   if (!gameStarted) {
     gameStarted = true;
@@ -290,7 +289,7 @@ function handleInput() {
   }
 
   player.velocity = jump;
-  playJumpSound();
+  playJump();
 }
 
 document.addEventListener("keydown", e => {
@@ -308,7 +307,7 @@ function donate() {
 </script>
 
 </body>
-</html>
+</html> 
  
   
-  
+   
