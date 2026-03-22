@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -18,7 +18,7 @@ canvas {
   margin: 10px auto;
   background: #87ceeb;
   border-radius: 10px;
-  touch-action: manipulation; /* MOBILE FIX */
+  touch-action: manipulation;
 }
 
 #actions { margin-top: 10px; }
@@ -30,8 +30,6 @@ button, input {
   border: none;
   font-size: 16px;
 }
-
-button { cursor: pointer; }
 
 .leaderboard {
   background: rgba(0,0,0,0.2);
@@ -68,14 +66,9 @@ const actions = document.getElementById("actions");
 const userInfo = document.getElementById("userInfo");
 const leaderboardDiv = document.getElementById("leaderboard");
 
-// AUDIO
-let audioCtx;
-function initAudio(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if(audioCtx.state==="suspended") audioCtx.resume();
-}
+// FLAGS (FIX SHAKE)
+let loginShown = false;
+let menuShown = false;
 
 // ACCOUNT
 let currentUser = localStorage.getItem("currentUser");
@@ -108,24 +101,23 @@ function renderLeaderboard(){
   leaderboardDiv.innerHTML=html;
 }
 
-// LOGIN (FIXED FOR MOBILE)
+// LOGIN (FIXED)
 function showLogin(){
+  if(loginShown) return;
+  loginShown = true;
+
   actions.innerHTML = `
     <div class="loginBox">
-      <input id="email" placeholder="Enter email" autocomplete="email">
+      <input id="email" placeholder="Enter email">
       <br>
       <button onclick="login()">Login</button>
     </div>
   `;
 
-  // FORCE FOCUS (mobile fix)
   setTimeout(()=>{
     let input = document.getElementById("email");
-    if(input){
-      input.focus();
-      input.click();
-    }
-  }, 200);
+    if(input) input.focus();
+  },200);
 }
 
 function login(){
@@ -133,7 +125,10 @@ function login(){
   if(!email) return alert("Enter email!");
   currentUser=email;
   localStorage.setItem("currentUser",email);
+
   actions.innerHTML="";
+  loginShown = false;
+  updateUserInfo();
 }
 
 function updateUserInfo(){
@@ -152,10 +147,10 @@ function resetGame(){
   gameStarted=false;
   gameOver=false;
   actions.innerHTML="";
+  menuShown = false;
 }
 resetGame();
 
-// OBSTACLES
 function createObstacle(){
   const gap = 130;
   const top = Math.random()*200+50;
@@ -168,7 +163,6 @@ function createObstacle(){
   });
 }
 
-// COINS
 function createCoin(){
   coinsArr.push({
     x:350,y:Math.random()*400+50
@@ -178,7 +172,6 @@ function createCoin(){
 setInterval(createObstacle,1600);
 setInterval(createCoin,1200);
 
-// PLAYER
 function drawPlayer(data){
   let x = player.x;
   let y = player.y;
@@ -211,6 +204,7 @@ function update(){
     ctx.fillText("Tap to Start",110,230);
     ctx.fillText("Coins: "+data.coins,120,260);
     ctx.fillText("Best: "+data.bestScore,120,290);
+
     showMenu();
     requestAnimationFrame(update);
     return;
@@ -282,15 +276,16 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// MENU
+// MENU (FIXED)
 function showMenu(){
-  if(actions.innerHTML===""){
-    actions.innerHTML=`
-      <button onclick="dailyReward()">🎁 Daily</button>
-      <button class="skin" onclick="buySkin()">✨ Gold Skin (100)</button>
-      <button class="donate" onclick="donate()">💰 Support</button>
-    `;
-  }
+  if(menuShown) return;
+  menuShown = true;
+
+  actions.innerHTML=`
+    <button onclick="dailyReward()">🎁 Daily</button>
+    <button class="skin" onclick="buySkin()">✨ Gold Skin (100)</button>
+    <button class="donate" onclick="donate()">💰 Support</button>
+  `;
 }
 
 // FEATURES
@@ -327,22 +322,19 @@ function revive(){
   } else donate();
 }
 
-// DONATE
 function donate(){
   window.open("https://bbmpacquiao-coder.github.io/morris-donation/", "_blank");
 }
 
-// CONTROLS (MOBILE FIX)
+// CONTROLS
 canvas.addEventListener("touchstart", e=>{
-  e.preventDefault(); // stops weird mobile behavior
+  e.preventDefault();
   handle();
 });
 
 canvas.addEventListener("click", handle);
 
 function handle(){
-  initAudio();
-
   if(!gameStarted){
     gameStarted=true;
     return;
@@ -364,4 +356,4 @@ update();
 </script>
 
 </body>
-</html>
+</html> 
