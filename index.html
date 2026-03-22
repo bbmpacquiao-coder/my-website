@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Money Game</title>
+<title>Ultimate Money Game</title>
 
 <style>
 body {
@@ -35,13 +35,15 @@ button {
 .revive { background: gold; }
 .restart { background: #333; color: white; }
 .donate { background: #ff4b2b; color: white; }
+.skin { background: purple; color: white; }
+.reward { background: green; color: white; }
 </style>
 </head>
 
 <body>
 
-<h2>🍄 Pro Money Game</h2>
-<p>Collect coins. Use them… or support ❤️</p>
+<h2>🍄 Ultimate Money Game</h2>
+<p>Earn coins. Upgrade. Support ❤️</p>
 
 <canvas id="game" width="350" height="500"></canvas>
 
@@ -52,28 +54,33 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const actions = document.getElementById("actions");
 
-// STATE
-let player, obstacles, coinsArr;
-let score, coins, gameStarted, gameOver, speed;
-let bestScore = localStorage.getItem("bestScore") || 0;
+// STATE (persistent)
+let coins = parseInt(localStorage.getItem("coins")) || 0;
+let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
+let skin = localStorage.getItem("skin") || "red";
+let doubleCoins = localStorage.getItem("doubleCoins") === "true";
 
-// 🔊 AUDIO
+// TEMP
+let player, obstacles, coinsArr;
+let score, gameStarted, gameOver, speed, combo;
+
+// AUDIO
 let audioCtx;
 function initAudio(){
   if(!audioCtx){
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 }
-function sound(freq,time){
+function sound(f,t){
   if(!audioCtx) return;
   const o=audioCtx.createOscillator();
   const g=audioCtx.createGain();
-  o.frequency.value=freq;
+  o.frequency.value=f;
   g.gain.value=0.2;
   o.connect(g); g.connect(audioCtx.destination);
   o.start();
-  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+time);
-  o.stop(audioCtx.currentTime+time);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+t);
+  o.stop(audioCtx.currentTime+t);
 }
 
 // RESET
@@ -82,13 +89,28 @@ function resetGame(){
   obstacles=[];
   coinsArr=[];
   score=0;
-  coins=coins || 0; // keep coins (progression trick 💀)
+  combo=0;
   speed=2;
   gameStarted=false;
   gameOver=false;
   actions.innerHTML="";
 }
 resetGame();
+
+// DAILY REWARD
+function dailyReward(){
+  let last = localStorage.getItem("lastReward");
+  let now = Date.now();
+
+  if(!last || now - last > 86400000){
+    coins += 20;
+    localStorage.setItem("coins", coins);
+    localStorage.setItem("lastReward", now);
+    alert("🎁 You got 20 FREE coins!");
+  } else {
+    alert("Come back tomorrow for reward!");
+  }
+}
 
 // SPAWN
 function createObstacle(){
@@ -97,22 +119,21 @@ function createObstacle(){
   obstacles.push({x:350,w:40,top:h,bottom:500-h-gap});
 }
 function createCoin(){
-  coinsArr.push({
-    x:350,
-    y:Math.random()*400+50,
-    size:10
-  });
+  coinsArr.push({x:350,y:Math.random()*400+50,size:10});
 }
 setInterval(createObstacle,1800);
-setInterval(createCoin,1400);
+setInterval(createCoin,1200);
 
 // LOOP
 function update(){
   ctx.clearRect(0,0,350,500);
 
   if(!gameStarted){
-    ctx.fillText("Click to Start",110,250);
-    ctx.fillText("Coins:"+coins,130,280);
+    ctx.fillText("Click to Start",110,240);
+    ctx.fillText("Coins:"+coins,130,270);
+    ctx.fillText("Best:"+bestScore,130,300);
+
+    showMenu();
     requestAnimationFrame(update);
     return;
   }
@@ -127,8 +148,8 @@ function update(){
   player.velocity+=0.4;
   player.y+=player.velocity;
 
-  // player
-  ctx.fillStyle="red";
+  // PLAYER (skin)
+  ctx.fillStyle = skin === "gold" ? "gold" : "red";
   ctx.fillRect(player.x,player.y,20,20);
 
   // obstacles
@@ -160,9 +181,11 @@ function update(){
 
     if(player.x<c.x+10 && player.x+20>c.x &&
        player.y<c.y+10 && player.y+20>c.y){
-        coins++;
-        coinsArr.splice(i,1);
+        let gain = doubleCoins ? 2 : 1;
+        coins += gain;
+        combo++;
         sound(800,0.1);
+        coinsArr.splice(i,1);
         i--;
     }
 
@@ -175,38 +198,44 @@ function update(){
 
   score++;
 
-  // 💀 difficulty spike (forces failure)
-  if(score%150===0) speed+=0.5;
+  // 💀 difficulty spike
+  if(score%120===0) speed+=0.6;
 
   ctx.fillStyle="black";
   ctx.fillText("Score:"+score,10,20);
   ctx.fillText("Coins:"+coins,250,20);
+  ctx.fillText("Combo:"+combo,130,20);
 
   requestAnimationFrame(update);
 }
 
-// GAME OVER UI (PSYCHOLOGY 💸)
+// MENU (monetization)
+function showMenu(){
+  if(actions.innerHTML===""){
+    actions.innerHTML = `
+      <button class="reward" onclick="dailyReward()">🎁 Daily Reward</button>
+      <button class="skin" onclick="buySkin()">🎨 Unlock Gold Skin (50 coins)</button>
+      <button class="donate" onclick="donate()">💰 Donate (Unlock x2 coins)</button>
+    `;
+  }
+}
+
+// GAME OVER
 function drawGameOver(){
   ctx.fillText("Game Over",120,200);
   ctx.fillText("Score:"+score,120,230);
   ctx.fillText("Coins:"+coins,120,260);
 
+  if(score>bestScore){
+    bestScore=score;
+    localStorage.setItem("bestScore",bestScore);
+  }
+
   if(actions.innerHTML===""){
-
-    let reviveCost = 10;
-
     actions.innerHTML = `
-      <button class="revive" onclick="revive(${reviveCost})">
-        ❤️ Revive (${reviveCost} coins)
-      </button>
-
-      <button class="donate" onclick="donate()">
-        💰 Not enough? Support to revive
-      </button>
-
-      <button class="restart" onclick="restart()">
-        🔁 Restart
-      </button>
+      <button class="revive" onclick="revive(15)">❤️ Revive (15 coins)</button>
+      <button class="donate" onclick="donate()">💰 Not enough? Support</button>
+      <button class="restart" onclick="restart()">🔁 Restart</button>
     `;
   }
 }
@@ -215,6 +244,7 @@ function drawGameOver(){
 function endGame(){
   gameOver=true;
   sound(150,0.4);
+  localStorage.setItem("coins", coins);
 }
 
 // CONTROLS
@@ -237,18 +267,16 @@ document.addEventListener("keydown",e=>{
   if(e.code==="Space") handle();
 });
 
-// 💸 MONETIZATION CORE
+// 💸 CORE SYSTEM
 function revive(cost){
-  if(coins >= cost){
-    coins -= cost;
-
+  if(coins>=cost){
+    coins-=cost;
     gameOver=false;
     player.y=200;
     player.velocity=0;
-
     actions.innerHTML="";
   } else {
-    donate(); // 💰 force donation path
+    donate();
   }
 }
 
@@ -256,7 +284,21 @@ function restart(){
   resetGame();
 }
 
+function buySkin(){
+  if(coins>=50){
+    coins-=50;
+    skin="gold";
+    localStorage.setItem("skin",skin);
+    localStorage.setItem("coins",coins);
+    alert("🎨 Gold Skin Unlocked!");
+  } else {
+    donate();
+  }
+}
+
 function donate(){
+  localStorage.setItem("doubleCoins", true);
+  alert("🚀 x2 Coins Activated!");
   window.location.href="https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 
@@ -265,5 +307,5 @@ update();
 
 </body>
 </html>
- 
- 
+  
+  
