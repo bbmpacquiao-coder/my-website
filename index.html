@@ -46,20 +46,27 @@ button {
 <br>
 <button class="donate" onclick="donate()">❤️ Support Me</button>
  
-<script>
+ <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 let player, obstacles, score, gameStarted, gameOver;
 let gravity = 0.4;
 let jump = -7;
-
 let speed = 2;
+
 let bestScore = localStorage.getItem("bestScore") || 0;
+let particles = [];
+let shake = 0;
+
+// 🔊 SOUND
+const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3");
+const hitSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3");
 
 function resetGame() {
   player = { x: 50, y: 200, size: 20, velocity: 0 };
   obstacles = [];
+  particles = [];
   score = 0;
   gameStarted = false;
   gameOver = false;
@@ -69,7 +76,7 @@ function resetGame() {
 resetGame();
 
 function createObstacle() {
-  let gap = 150 - Math.min(score / 10, 60); // gap gets smaller = harder
+  let gap = 150 - Math.min(score / 10, 70);
   let height = Math.random() * 150 + 80;
 
   obstacles.push({
@@ -82,15 +89,49 @@ function createObstacle() {
 
 setInterval(createObstacle, 1800);
 
+// 💥 PARTICLES
+function createExplosion(x, y) {
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      vx: (Math.random() - 0.5) * 5,
+      vy: (Math.random() - 0.5) * 5,
+      life: 30
+    });
+  }
+}
+
+function updateParticles() {
+  particles.forEach((p, i) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(p.x, p.y, 3, 3);
+
+    if (p.life <= 0) particles.splice(i, 1);
+  });
+}
+
+// 🎮 MAIN LOOP
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // START SCREEN
+  // SHAKE
+  if (shake > 0) {
+    ctx.save();
+    ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
+    shake--;
+  }
+
+  // START
   if (!gameStarted && !gameOver) {
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
     ctx.fillText("Click to Start", 100, 240);
-    ctx.fillText("Beat High Score: " + bestScore, 70, 280);
+    ctx.fillText("Best: " + bestScore, 120, 280);
     requestAnimationFrame(update);
     return;
   }
@@ -109,9 +150,12 @@ function update() {
     ctx.fillText("Best: " + bestScore, 120, 270);
     ctx.fillText("Click to Restart", 80, 320);
 
-    // 💰 soft donation message
     ctx.font = "16px Arial";
-    ctx.fillText("Enjoyed? Support ❤️ below", 80, 360);
+    ctx.fillText("Support ❤️ below if you enjoyed!", 60, 360);
+
+    updateParticles();
+
+    if (shake > 0) ctx.restore();
 
     requestAnimationFrame(update);
     return;
@@ -120,13 +164,12 @@ function update() {
   // physics
   player.velocity += gravity;
   player.y += player.velocity;
-
-  // smooth cap
   if (player.velocity > 10) player.velocity = 10;
 
-  // player
+  // ✨ PLAYER ANIMATION (pulse)
+  let pulse = Math.sin(Date.now() * 0.01) * 2;
   ctx.fillStyle = "lime";
-  ctx.fillRect(player.x, player.y, player.size, player.size);
+  ctx.fillRect(player.x, player.y, player.size + pulse, player.size + pulse);
 
   // obstacles
   for (let i = 0; i < obstacles.length; i++) {
@@ -137,13 +180,15 @@ function update() {
     ctx.fillRect(obs.x, 0, obs.width, obs.top);
     ctx.fillRect(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
 
-    // collision
     if (
       player.x < obs.x + obs.width &&
       player.x + player.size > obs.x &&
       (player.y < obs.top || player.y + player.size > canvas.height - obs.bottom)
     ) {
       gameOver = true;
+      shake = 10;
+      hitSound.play();
+      createExplosion(player.x, player.y);
     }
 
     if (obs.x < -30) {
@@ -155,9 +200,12 @@ function update() {
   // bounds
   if (player.y > canvas.height || player.y < 0) {
     gameOver = true;
+    shake = 10;
+    hitSound.play();
+    createExplosion(player.x, player.y);
   }
 
-  // increase difficulty
+  // difficulty
   score++;
   if (score % 200 === 0) speed += 0.3;
 
@@ -166,6 +214,10 @@ function update() {
   ctx.font = "20px Arial";
   ctx.fillText("Score: " + score, 10, 30);
   ctx.fillText("Best: " + bestScore, 220, 30);
+
+  updateParticles();
+
+  if (shake > 0) ctx.restore();
 
   requestAnimationFrame(update);
 }
@@ -183,6 +235,8 @@ function handleInput() {
   }
 
   player.velocity = jump;
+  jumpSound.currentTime = 0;
+  jumpSound.play();
 }
 
 document.addEventListener("keydown", e => {
@@ -193,11 +247,14 @@ canvas.addEventListener("click", handleInput);
 
 update();
 
-// donation
+// 💰 DONATION
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
-</script> 
+</script>
+ 
+ 
+ 
  
  
  
