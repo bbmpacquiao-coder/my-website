@@ -1,4 +1,51 @@
- <script>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endless Jump Game</title>
+
+<style>
+body {
+  margin: 0;
+  background: #0f2027;
+  color: white;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  background: #203a43;
+  display: block;
+  margin: 20px auto;
+  border-radius: 10px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.donate {
+  background: #ff4b2b;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🚀 Endless Jump Game</h2>
+<p>Tap or press SPACE to start & jump</p>
+
+<canvas id="game" width="350" height="500"></canvas>
+
+<br>
+<button class="donate" onclick="donate()">❤️ Support Me</button>
+<script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -123,5 +170,10 @@ update();
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
-</script> 
-   
+</script>
+ 
+ 
+
+</body>
+</html> 
+  
