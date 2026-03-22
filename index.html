@@ -1,111 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Endless Jump Game</title>
-
-<style>
-body {
-  margin: 0;
-  background: #0f2027;
-  color: white;
-  text-align: center;
-  font-family: Arial, sans-serif;
-}
-
-canvas {
-  background: #203a43;
-  display: block;
-  margin: 20px auto;
-  border-radius: 10px;
-}
-
-button {
-  margin-top: 10px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.donate {
-  background: #ff4b2b;
-  color: white;
-}
-</style>
-</head>
-
-<body>
-
-<h2>🚀 Endless Jump Game</h2>
-<p>Tap or press SPACE to start & jump</p>
-
-<canvas id="game" width="350" height="500"></canvas>
-
-<br>
-<button class="donate" onclick="donate()">❤️ Support Me</button>
-
-<script>
+ <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let player = {
-  x: 50,
-  y: 200,
-  size: 20,
-  velocity: 0
-};
+let player, obstacles, score, gameStarted, gameOver;
+let gravity = 0.4;   // easier
+let jump = -7;
 
-let gravity = 0.5;
-let jump = -8;
+function resetGame() {
+  player = { x: 50, y: 200, size: 20, velocity: 0 };
+  obstacles = [];
+  score = 0;
+  gameStarted = false;
+  gameOver = false;
+}
 
-let obstacles = [];
-let score = 0;
-let gameStarted = false;
-let obstacleTimer = null;
+resetGame();
 
 function createObstacle() {
-  let height = Math.random() * 200 + 50;
+  let height = Math.random() * 150 + 80; // easier gaps
   obstacles.push({
     x: canvas.width,
     width: 30,
     top: height,
-    bottom: canvas.height - height - 120
+    bottom: canvas.height - height - 150
   });
 }
+
+setInterval(createObstacle, 1800); // slower = easier
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (!gameStarted) {
+  // START SCREEN
+  if (!gameStarted && !gameOver) {
     ctx.fillStyle = "white";
-    ctx.font = "18px Arial";
-    ctx.fillText("Click or Press SPACE to Start", 40, 250);
+    ctx.font = "20px Arial";
+    ctx.fillText("Click to Start", 100, 250);
     requestAnimationFrame(update);
     return;
   }
 
+  // GAME OVER SCREEN
+  if (gameOver) {
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Game Over! Score: " + score, 70, 230);
+    ctx.fillText("Click to Restart", 90, 270);
+    requestAnimationFrame(update);
+    return;
+  }
+
+  // physics
   player.velocity += gravity;
   player.y += player.velocity;
 
+  // player
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.size, player.size);
 
+  // obstacles
   for (let i = 0; i < obstacles.length; i++) {
     let obs = obstacles[i];
-    obs.x -= 3;
+    obs.x -= 2; // slower speed
 
     ctx.fillStyle = "red";
     ctx.fillRect(obs.x, 0, obs.width, obs.top);
     ctx.fillRect(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
 
+    // collision
     if (
       player.x < obs.x + obs.width &&
       player.x + player.size > obs.x &&
       (player.y < obs.top || player.y + player.size > canvas.height - obs.bottom)
     ) {
-      endGame();
+      gameOver = true;
     }
 
     if (obs.x < -30) {
@@ -114,10 +82,12 @@ function update() {
     }
   }
 
+  // bounds
   if (player.y > canvas.height || player.y < 0) {
-    endGame();
+    gameOver = true;
   }
 
+  // score
   score++;
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
@@ -126,33 +96,32 @@ function update() {
   requestAnimationFrame(update);
 }
 
-function endGame() {
-  alert("Game Over! Score: " + score);
-  location.reload();
-}
-
-function startGame() {
+// controls
+function handleInput() {
   if (!gameStarted) {
     gameStarted = true;
-    obstacleTimer = setInterval(createObstacle, 1500);
+    return;
   }
+
+  if (gameOver) {
+    resetGame();
+    return;
+  }
+
   player.velocity = jump;
 }
 
 document.addEventListener("keydown", e => {
-  if (e.code === "Space") startGame();
+  if (e.code === "Space") handleInput();
 });
 
-canvas.addEventListener("click", startGame);
+canvas.addEventListener("click", handleInput);
 
 update();
 
+// donation
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
-</script>
-
-</body>
-</html> 
- 
-      
+</script> 
+   
