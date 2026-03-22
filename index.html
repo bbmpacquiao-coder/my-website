@@ -20,22 +20,21 @@ canvas {
   border-radius: 10px;
 }
 
+#actions {
+  margin-top: 10px;
+}
+
 button {
   padding: 10px 15px;
+  margin: 5px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  margin: 5px;
 }
 
-.donate {
-  background: #ff4b2b;
-  color: white;
-}
-
-.revive {
-  background: gold;
-}
+.donate { background: #ff4b2b; color: white; }
+.revive { background: gold; }
+.restart { background: #333; color: white; }
 </style>
 </head>
 
@@ -51,10 +50,10 @@ button {
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const actions = document.getElementById("actions");
 
-let player, obstacles, coinsArr, score, coins, gameStarted, gameOver;
-let gravity = 0.4, jump = -7, speed = 2;
-
+let player, obstacles, coinsArr, score, coins;
+let gameStarted, gameOver, speed;
 let bestScore = localStorage.getItem("bestScore") || 0;
 
 // 🔊 AUDIO
@@ -64,8 +63,8 @@ function initAudio(){
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 }
-
 function sound(freq, time){
+  if(!audioCtx) return;
   const o = audioCtx.createOscillator();
   const g = audioCtx.createGain();
   o.frequency.value = freq;
@@ -83,34 +82,27 @@ function resetGame(){
   coinsArr=[];
   score=0;
   coins=0;
+  speed=2;
   gameStarted=false;
   gameOver=false;
-  speed=2;
-  document.getElementById("actions").innerHTML="";
+  actions.innerHTML="";
 }
-
 resetGame();
 
-// OBSTACLES
+// CREATE
 function createObstacle(){
   let gap=150-Math.min(score/10,70);
   let h=Math.random()*150+80;
   obstacles.push({x:350,w:40,top:h,bottom:500-h-gap});
 }
-
-// COINS
 function createCoin(){
-  coinsArr.push({
-    x:350,
-    y:Math.random()*400+50,
-    size:10
-  });
+  coinsArr.push({x:350,y:Math.random()*400+50,size:10});
 }
 
 setInterval(createObstacle,1800);
 setInterval(createCoin,1500);
 
-// LOOP
+// GAME LOOP
 function update(){
   ctx.clearRect(0,0,350,500);
 
@@ -121,28 +113,13 @@ function update(){
   }
 
   if(gameOver){
-    if(score>bestScore){
-      bestScore=score;
-      localStorage.setItem("bestScore",bestScore);
-    }
-
-    ctx.fillText("Game Over",120,200);
-    ctx.fillText("Score:"+score,120,230);
-    ctx.fillText("Coins:"+coins,120,260);
-
-    // 💰 MONEY BUTTONS
-    document.getElementById("actions").innerHTML = `
-      <button class="revive" onclick="revive()">❤️ Revive (Support)</button>
-      <button onclick="restart()">🔁 Restart</button>
-      <button class="donate" onclick="donate()">💰 Donate</button>
-    `;
-
+    drawGameOverUI();
     requestAnimationFrame(update);
     return;
   }
 
   // physics
-  player.velocity+=gravity;
+  player.velocity+=0.4;
   player.y+=player.velocity;
 
   // player
@@ -160,11 +137,10 @@ function update(){
 
     if(player.x<o.x+o.w && player.x+20>o.x &&
       (player.y<o.top || player.y+20>500-o.bottom)){
-        gameOver=true;
-        sound(150,0.4);
+        endGame();
     }
 
-    if(o.x<-40) obstacles.splice(i,1);
+    if(o.x<-40){ obstacles.splice(i,1); i--; }
   }
 
   // coins
@@ -182,14 +158,14 @@ function update(){
         coins++;
         coinsArr.splice(i,1);
         sound(800,0.1);
+        i--;
     }
 
-    if(c.x<0) coinsArr.splice(i,1);
+    if(c.x<0){ coinsArr.splice(i,1); i--; }
   }
 
   if(player.y>500 || player.y<0){
-    gameOver=true;
-    sound(150,0.4);
+    endGame();
   }
 
   score++;
@@ -202,29 +178,54 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// controls
+// END GAME
+function endGame(){
+  gameOver=true;
+  sound(150,0.4);
+}
+
+// UI BUTTONS (FIXED)
+function drawGameOverUI(){
+  ctx.fillText("Game Over",120,200);
+  ctx.fillText("Score:"+score,120,230);
+  ctx.fillText("Coins:"+coins,120,260);
+
+  if(actions.innerHTML===""){
+    actions.innerHTML = `
+      <button class="revive" onclick="revive()">❤️ Revive</button>
+      <button class="restart" onclick="restart()">🔁 Restart</button>
+      <button class="donate" onclick="donate()">💰 Donate</button>
+    `;
+  }
+}
+
+// CONTROLS
 function handle(){
   initAudio();
 
-  if(!gameStarted){gameStarted=true;return;}
-  if(gameOver)return;
+  if(!gameStarted){
+    gameStarted=true;
+    return;
+  }
 
-  player.velocity=jump;
+  if(gameOver) return;
+
+  player.velocity=-7;
   sound(500,0.2);
 }
 
 canvas.addEventListener("click",handle);
 document.addEventListener("keydown",e=>{
-  if(e.code==="Space")handle();
+  if(e.code==="Space") handle();
 });
 
-// 💰 ACTIONS
+// BUTTON ACTIONS (FIXED)
 function revive(){
   gameOver=false;
   player.y=200;
   player.velocity=0;
-  document.getElementById("actions").innerHTML="";
-  donate();
+  actions.innerHTML="";
+  donate(); // 💰 trigger donation
 }
 
 function restart(){
@@ -240,6 +241,8 @@ update();
 
 </body>
 </html> 
+  
+ 
  
  
   
