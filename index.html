@@ -43,6 +43,13 @@ input {
 .skin { background: purple; color: white; }
 .reward { background: green; color: white; }
 .logout { background: black; color: white; }
+
+.leaderboard {
+  background: rgba(0,0,0,0.2);
+  padding: 10px;
+  border-radius: 10px;
+  margin: 10px;
+}
 </style>
 </head>
 
@@ -50,6 +57,8 @@ input {
 
 <h2>🍄 Ultimate Money Game</h2>
 <div id="userInfo"></div>
+
+<div class="leaderboard" id="leaderboard"></div>
 
 <canvas id="game" width="350" height="500"></canvas>
 
@@ -60,6 +69,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const actions = document.getElementById("actions");
 const userInfo = document.getElementById("userInfo");
+const leaderboardDiv = document.getElementById("leaderboard");
 
 // ACCOUNT
 let currentUser = localStorage.getItem("currentUser");
@@ -78,18 +88,40 @@ function saveUserData(data){
   localStorage.setItem("user_"+currentUser, JSON.stringify(data));
 }
 
+// LEADERBOARD
+function getLeaderboard(){
+  return JSON.parse(localStorage.getItem("leaderboard")) || [];
+}
+
+function saveScore(name, score){
+  let board = getLeaderboard();
+  board.push({name, score});
+  board.sort((a,b)=>b.score-a.score);
+  board = board.slice(0,5);
+  localStorage.setItem("leaderboard", JSON.stringify(board));
+  renderLeaderboard();
+}
+
+function renderLeaderboard(){
+  let board = getLeaderboard();
+  let html = "<h3>🏆 Leaderboard</h3>";
+  board.forEach((p,i)=>{
+    html += `<div>${i+1}. ${p.name} - ${p.score}</div>`;
+  });
+  leaderboardDiv.innerHTML = html;
+}
+
 // LOGIN
 function showLogin(){
   actions.innerHTML = `
     <input id="email" placeholder="Enter email">
-    <button onclick="login()">Login / Register</button>
+    <button onclick="login()">Login</button>
   `;
 }
 
 function login(){
   const email = document.getElementById("email").value;
   if(!email) return alert("Enter email!");
-
   currentUser = email;
   localStorage.setItem("currentUser", email);
   actions.innerHTML="";
@@ -107,28 +139,9 @@ function updateUserInfo(){
     : "";
 }
 
-// GAME STATE
+// GAME
 let player, obstacles, coinsArr;
 let score, gameStarted, gameOver, speed;
-
-// AUDIO
-let audioCtx;
-function initAudio(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-}
-function sound(f,t){
-  if(!audioCtx) return;
-  const o=audioCtx.createOscillator();
-  const g=audioCtx.createGain();
-  o.frequency.value=f;
-  g.gain.value=0.2;
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start();
-  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+t);
-  o.stop(audioCtx.currentTime+t);
-}
 
 // RESET
 function resetGame(){
@@ -143,16 +156,16 @@ function resetGame(){
 }
 resetGame();
 
-// DAILY REWARD
+// DAILY REWARD (20)
 function dailyReward(){
   let data = getUserData();
   let now = Date.now();
 
   if(now - data.lastReward > 86400000){
-    data.coins += 100;
+    data.coins += 20;
     data.lastReward = now;
     saveUserData(data);
-    alert("🎁 You got 100 coins!");
+    alert("🎁 You got 20 coins!");
   } else {
     alert("Come back tomorrow!");
   }
@@ -232,7 +245,6 @@ function update(){
        player.y<c.y+10 && player.y+20>c.y){
         let gain = data.doubleCoins ? 2 : 1;
         data.coins += gain;
-        sound(800,0.1);
         coinsArr.splice(i,1);
         i--;
     }
@@ -252,7 +264,6 @@ function update(){
   ctx.fillText("Coins:"+data.coins,250,20);
 
   saveUserData(data);
-
   requestAnimationFrame(update);
 }
 
@@ -260,9 +271,9 @@ function update(){
 function showMenu(){
   if(actions.innerHTML===""){
     actions.innerHTML = `
-      <button class="reward" onclick="dailyReward()">🎁 Daily Reward (100)</button>
-      <button class="skin" onclick="buySkin()">🎨 Gold Skin (150 coins)</button>
-      <button class="donate" onclick="donate()">💰 Donate (x2 coins)</button>
+      <button class="reward" onclick="dailyReward()">🎁 Daily Reward (20)</button>
+      <button class="skin" onclick="buySkin()">🎨 Gold Skin (100)</button>
+      <button class="donate" onclick="donate()">💰 Donate</button>
     `;
   }
 }
@@ -277,10 +288,12 @@ function drawGameOver(data){
     saveUserData(data);
   }
 
+  saveScore(currentUser, score);
+
   if(actions.innerHTML===""){
     actions.innerHTML = `
-      <button class="revive" onclick="revive(10)">❤️ Revive (10 coins)</button>
-      <button class="donate" onclick="donate()">💰 Not enough? Support</button>
+      <button class="revive" onclick="revive(10)">❤️ Revive (10)</button>
+      <button class="donate" onclick="donate()">💰 Support</button>
       <button class="restart" onclick="restart()">🔁 Restart</button>
     `;
   }
@@ -289,23 +302,17 @@ function drawGameOver(data){
 // END
 function endGame(data){
   gameOver=true;
-  sound(150,0.4);
   saveUserData(data);
 }
 
 // CONTROLS
 function handle(){
-  initAudio();
-
   if(!gameStarted){
     gameStarted=true;
     return;
   }
-
   if(gameOver) return;
-
   player.velocity=-7;
-  sound(500,0.2);
 }
 
 canvas.addEventListener("click",handle);
@@ -334,27 +341,24 @@ function restart(){
 
 function buySkin(){
   let data = getUserData();
-  if(data.coins>=150){
-    data.coins-=150;
+  if(data.coins>=100){
+    data.coins-=100;
     data.skin="gold";
     saveUserData(data);
-    alert("🎨 Gold Skin Unlocked!");
+    alert("🎨 Skin Unlocked!");
   } else donate();
 }
 
 function donate(){
-  let data = getUserData();
-  data.doubleCoins=true;
-  saveUserData(data);
-  alert("🚀 x2 Coins Activated!");
+  alert("Thanks for supporting ❤️");
   window.location.href="https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 
 // INIT
 updateUserInfo();
+renderLeaderboard();
 update();
 </script>
 
 </body>
 </html>
- 
