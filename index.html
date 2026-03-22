@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Play & Support Morris</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+.container {
+  max-width: 400px;
+  margin: auto;
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+h1 {
+  font-weight: 600;
+}
+
+.slot {
+  font-size: 50px;
+  margin: 20px 0;
+}
+
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 5px;
+}
+
+.play-btn {
+  background: #00c6ff;
+  color: black;
+}
+
+.donate-btn {
+  background: #ff4b2b;
+  color: white;
+  width: 100%;
+}
+
+.coins {
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+.win {
+  color: #00ffcc;
+  font-weight: bold;
+}
+
+.lose {
+  color: #ff4b2b;
+}
+
+.footer {
+  margin-top: 20px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🎰 Mini Casino Fun</h1>
+  <p>Play for fun! Support if you enjoy ❤️</p>
+
+  <div class="slot" id="slot">🍒 🍋 🍉</div>
+
+  <button class="play-btn" onclick="spin()">SPIN</button>
+
+  <div class="coins">Coins: <span id="coins">100</span></div>
+  <div id="result"></div>
+
+  <hr>
+
+  <!-- 🔥 YOUR DONATION BUTTONS -->
+  <button class="donate-btn" onclick="donate()">❤️ Support Me (Donate)</button>
+
+  <div class="footer">
+    Made by Morris Zoleta 💙
+  </div>
+</div>
+
+<script>
+let coins = 100;
+const emojis = ["🍒","🍋","🍉","🍇","⭐"];
+
+function spin() {
+  if (coins <= 0) {
+    document.getElementById("result").innerHTML = "No coins left!";
+    return;
+  }
+
+  coins -= 10;
+
+  let a = emojis[Math.floor(Math.random()*emojis.length)];
+  let b = emojis[Math.floor(Math.random()*emojis.length)];
+  let c = emojis[Math.floor(Math.random()*emojis.length)];
+
+  document.getElementById("slot").innerHTML = `${a} ${b} ${c}`;
+
+  if (a === b && b === c) {
+    coins += 50;
+    document.getElementById("result").innerHTML = "<span class='win'>🔥 JACKPOT! +50 coins</span>";
+  } else {
+    document.getElementById("result").innerHTML = "<span class='lose'>Try again!</span>";
+  }
+
+  document.getElementById("coins").innerText = coins;
+}
+
+function donate() {
+  // 👉 REPLACE THIS WITH YOUR REAL LINK
+  window.location.href = https://bbmpacquiao-coder.github.io/morris-donation/
+}
+</script>
+
+</body>
+</html>
