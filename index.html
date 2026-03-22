@@ -9,6 +9,7 @@
 
 <style>
 body {
+  margin: 0;
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   color: white;
@@ -17,6 +18,8 @@ body {
 }
 
 .container {
+  position: relative;
+  z-index: 10;
   max-width: 400px;
   margin: auto;
   background: rgba(255,255,255,0.05);
@@ -41,6 +44,11 @@ button {
   font-size: 16px;
   cursor: pointer;
   margin: 5px;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
 }
 
 .play-btn {
@@ -91,7 +99,7 @@ button {
 
   <hr>
 
-  <!-- 🔥 YOUR DONATION BUTTONS -->
+  <!-- ❤️ DONATION BUTTON -->
   <button class="donate-btn" onclick="donate()">❤️ Support Me (Donate)</button>
 
   <div class="footer">
@@ -128,10 +136,11 @@ function spin() {
 }
 
 function donate() {
-  // 👉 REPLACE THIS WITH YOUR REAL LINK
-  window.location.href = https://bbmpacquiao-coder.github.io/morris-donation/
+  window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 </script>
 
 </body>
-</html>
+</html> 
+
+ 
