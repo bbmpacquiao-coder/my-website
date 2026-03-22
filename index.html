@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mario Money Game</title>
+<title>Pro Money Game</title>
 
 <style>
 body {
@@ -32,16 +32,16 @@ button {
   cursor: pointer;
 }
 
-.donate { background: #ff4b2b; color: white; }
 .revive { background: gold; }
 .restart { background: #333; color: white; }
+.donate { background: #ff4b2b; color: white; }
 </style>
 </head>
 
 <body>
 
-<h2>🍄 Mario Money Game</h2>
-<p>Play, collect coins, support ❤️</p>
+<h2>🍄 Pro Money Game</h2>
+<p>Collect coins. Use them… or support ❤️</p>
 
 <canvas id="game" width="350" height="500"></canvas>
 
@@ -52,8 +52,9 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const actions = document.getElementById("actions");
 
-let player, obstacles, coinsArr, score, coins;
-let gameStarted, gameOver, speed;
+// STATE
+let player, obstacles, coinsArr;
+let score, coins, gameStarted, gameOver, speed;
 let bestScore = localStorage.getItem("bestScore") || 0;
 
 // 🔊 AUDIO
@@ -63,25 +64,25 @@ function initAudio(){
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 }
-function sound(freq, time){
+function sound(freq,time){
   if(!audioCtx) return;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.frequency.value = freq;
-  g.gain.value = 0.2;
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  o.frequency.value=freq;
+  g.gain.value=0.2;
   o.connect(g); g.connect(audioCtx.destination);
   o.start();
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + time);
-  o.stop(audioCtx.currentTime + time);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+time);
+  o.stop(audioCtx.currentTime+time);
 }
 
 // RESET
 function resetGame(){
-  player = {x:50,y:200,size:20,velocity:0};
+  player={x:50,y:200,size:20,velocity:0};
   obstacles=[];
   coinsArr=[];
   score=0;
-  coins=0;
+  coins=coins || 0; // keep coins (progression trick 💀)
   speed=2;
   gameStarted=false;
   gameOver=false;
@@ -89,31 +90,35 @@ function resetGame(){
 }
 resetGame();
 
-// CREATE
+// SPAWN
 function createObstacle(){
   let gap=150-Math.min(score/10,70);
   let h=Math.random()*150+80;
   obstacles.push({x:350,w:40,top:h,bottom:500-h-gap});
 }
 function createCoin(){
-  coinsArr.push({x:350,y:Math.random()*400+50,size:10});
+  coinsArr.push({
+    x:350,
+    y:Math.random()*400+50,
+    size:10
+  });
 }
-
 setInterval(createObstacle,1800);
-setInterval(createCoin,1500);
+setInterval(createCoin,1400);
 
-// GAME LOOP
+// LOOP
 function update(){
   ctx.clearRect(0,0,350,500);
 
   if(!gameStarted){
     ctx.fillText("Click to Start",110,250);
+    ctx.fillText("Coins:"+coins,130,280);
     requestAnimationFrame(update);
     return;
   }
 
   if(gameOver){
-    drawGameOverUI();
+    drawGameOver();
     requestAnimationFrame(update);
     return;
   }
@@ -169,7 +174,9 @@ function update(){
   }
 
   score++;
-  if(score%200===0) speed+=0.3;
+
+  // 💀 difficulty spike (forces failure)
+  if(score%150===0) speed+=0.5;
 
   ctx.fillStyle="black";
   ctx.fillText("Score:"+score,10,20);
@@ -178,25 +185,36 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// END GAME
-function endGame(){
-  gameOver=true;
-  sound(150,0.4);
-}
-
-// UI BUTTONS (FIXED)
-function drawGameOverUI(){
+// GAME OVER UI (PSYCHOLOGY 💸)
+function drawGameOver(){
   ctx.fillText("Game Over",120,200);
   ctx.fillText("Score:"+score,120,230);
   ctx.fillText("Coins:"+coins,120,260);
 
   if(actions.innerHTML===""){
+
+    let reviveCost = 10;
+
     actions.innerHTML = `
-      <button class="revive" onclick="revive()">❤️ Revive</button>
-      <button class="restart" onclick="restart()">🔁 Restart</button>
-      <button class="donate" onclick="donate()">💰 Donate</button>
+      <button class="revive" onclick="revive(${reviveCost})">
+        ❤️ Revive (${reviveCost} coins)
+      </button>
+
+      <button class="donate" onclick="donate()">
+        💰 Not enough? Support to revive
+      </button>
+
+      <button class="restart" onclick="restart()">
+        🔁 Restart
+      </button>
     `;
   }
+}
+
+// END
+function endGame(){
+  gameOver=true;
+  sound(150,0.4);
 }
 
 // CONTROLS
@@ -219,13 +237,19 @@ document.addEventListener("keydown",e=>{
   if(e.code==="Space") handle();
 });
 
-// BUTTON ACTIONS (FIXED)
-function revive(){
-  gameOver=false;
-  player.y=200;
-  player.velocity=0;
-  actions.innerHTML="";
-  donate(); // 💰 trigger donation
+// 💸 MONETIZATION CORE
+function revive(cost){
+  if(coins >= cost){
+    coins -= cost;
+
+    gameOver=false;
+    player.y=200;
+    player.velocity=0;
+
+    actions.innerHTML="";
+  } else {
+    donate(); // 💰 force donation path
+  }
 }
 
 function restart(){
@@ -240,10 +264,6 @@ update();
 </script>
 
 </body>
-</html> 
-  
+</html>
  
  
- 
-  
-   
