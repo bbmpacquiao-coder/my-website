@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -61,7 +61,7 @@ const ctx = canvas.getContext("2d");
 const actions = document.getElementById("actions");
 const userInfo = document.getElementById("userInfo");
 
-// ACCOUNT SYSTEM
+// ACCOUNT
 let currentUser = localStorage.getItem("currentUser");
 
 function getUserData(){
@@ -78,7 +78,7 @@ function saveUserData(data){
   localStorage.setItem("user_"+currentUser, JSON.stringify(data));
 }
 
-// LOGIN UI
+// LOGIN
 function showLogin(){
   actions.innerHTML = `
     <input id="email" placeholder="Enter email">
@@ -143,13 +143,13 @@ function resetGame(){
 }
 resetGame();
 
-// DAILY REWARD (BIG)
+// DAILY REWARD
 function dailyReward(){
   let data = getUserData();
   let now = Date.now();
 
   if(now - data.lastReward > 86400000){
-    data.coins += 100; // 🔥 BIG REWARD
+    data.coins += 100;
     data.lastReward = now;
     saveUserData(data);
     alert("🎁 You got 100 coins!");
@@ -197,15 +197,12 @@ function update(){
     return;
   }
 
-  // physics
   player.velocity+=0.4;
   player.y+=player.velocity;
 
-  // player
   ctx.fillStyle = data.skin==="gold" ? "gold" : "red";
   ctx.fillRect(player.x,player.y,20,20);
 
-  // obstacles
   for(let i=0;i<obstacles.length;i++){
     let o=obstacles[i];
     o.x-=speed;
@@ -222,7 +219,6 @@ function update(){
     if(o.x<-40){ obstacles.splice(i,1); i--; }
   }
 
-  // coins
   for(let i=0;i<coinsArr.length;i++){
     let c=coinsArr[i];
     c.x-=speed;
@@ -265,7 +261,7 @@ function showMenu(){
   if(actions.innerHTML===""){
     actions.innerHTML = `
       <button class="reward" onclick="dailyReward()">🎁 Daily Reward (100)</button>
-      <button class="skin" onclick="buySkin()">🎨 Gold Skin (100 coins)</button>
+      <button class="skin" onclick="buySkin()">🎨 Gold Skin (150 coins)</button>
       <button class="donate" onclick="donate()">💰 Donate (x2 coins)</button>
     `;
   }
@@ -283,7 +279,7 @@ function drawGameOver(data){
 
   if(actions.innerHTML===""){
     actions.innerHTML = `
-      <button class="revive" onclick="revive(20)">❤️ Revive (20 coins)</button>
+      <button class="revive" onclick="revive(10)">❤️ Revive (10 coins)</button>
       <button class="donate" onclick="donate()">💰 Not enough? Support</button>
       <button class="restart" onclick="restart()">🔁 Restart</button>
     `;
@@ -338,11 +334,11 @@ function restart(){
 
 function buySkin(){
   let data = getUserData();
-  if(data.coins>=100){
-    data.coins-=100;
+  if(data.coins>=150){
+    data.coins-=150;
     data.skin="gold";
     saveUserData(data);
-    alert("Skin unlocked!");
+    alert("🎨 Gold Skin Unlocked!");
   } else donate();
 }
 
@@ -350,7 +346,7 @@ function donate(){
   let data = getUserData();
   data.doubleCoins=true;
   saveUserData(data);
-  alert("x2 Coins Activated!");
+  alert("🚀 x2 Coins Activated!");
   window.location.href="https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 
@@ -360,10 +356,5 @@ update();
 </script>
 
 </body>
-</html>  
+</html>
  
- 
-  
- 
-  
-  
