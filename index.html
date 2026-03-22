@@ -37,10 +37,8 @@ button, input {
   border-radius: 10px;
 }
 
-.donate {
-  background: #ff4b2b;
-  color: white;
-}
+.donate { background: #ff4b2b; color: white; }
+.skin { background: gold; }
 </style>
 </head>
 
@@ -60,7 +58,7 @@ const actions = document.getElementById("actions");
 const userInfo = document.getElementById("userInfo");
 const leaderboardDiv = document.getElementById("leaderboard");
 
-// 🎧 AUDIO
+// AUDIO
 let audioCtx;
 function initAudio(){
   if(!audioCtx){
@@ -85,7 +83,7 @@ let currentUser = localStorage.getItem("currentUser");
 
 function getUserData(){
   return JSON.parse(localStorage.getItem("user_"+currentUser)) || {
-    coins:0,bestScore:0,lastReward:0
+    coins:0,bestScore:0,lastReward:0,skin:"normal"
   };
 }
 function saveUserData(data){
@@ -134,7 +132,7 @@ let player, obstacles, coinsArr;
 let score=0, gameStarted=false, gameOver=false;
 
 function resetGame(){
-  player={x:50,y:200,size:20,velocity:0};
+  player={x:50,y:200,velocity:0};
   obstacles=[];
   coinsArr=[];
   score=0;
@@ -144,32 +142,63 @@ function resetGame(){
 }
 resetGame();
 
-// ✅ FIXED OBSTACLE (ALWAYS HAS GAP)
+// OBSTACLES (BRICK STYLE)
 function createObstacle(){
-  const gap = 130; // constant safe gap
-  const minTop = 50;
-  const maxTop = canvas.height - gap - 50;
-
-  const topHeight = Math.random() * (maxTop - minTop) + minTop;
+  const gap = 130;
+  const top = Math.random()*200+50;
 
   obstacles.push({
-    x: canvas.width,
-    w: 40,
-    top: topHeight,
-    bottom: canvas.height - topHeight - gap
+    x:350,
+    w:40,
+    top:top,
+    bottom:500-top-gap
   });
+}
+
+function drawBrick(x,y,w,h){
+  ctx.fillStyle="#b5522b";
+  ctx.fillRect(x,y,w,h);
+
+  ctx.strokeStyle="#7a2f14";
+  for(let i=0;i<w;i+=10){
+    for(let j=0;j<h;j+=10){
+      ctx.strokeRect(x+i,y+j,10,10);
+    }
+  }
 }
 
 // COINS
 function createCoin(){
   coinsArr.push({
-    x: canvas.width,
-    y: Math.random() * 400 + 50
+    x:350,y:Math.random()*400+50
   });
 }
 
-setInterval(createObstacle, 1600);
-setInterval(createCoin, 1200);
+setInterval(createObstacle,1600);
+setInterval(createCoin,1200);
+
+// DRAW PLAYER (HUMAN STYLE)
+function drawPlayer(data){
+  let x = player.x;
+  let y = player.y;
+
+  let bodyColor = data.skin==="gold" ? "gold" : "blue";
+
+  // body
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(x, y, 15, 20);
+
+  // head
+  ctx.beginPath();
+  ctx.arc(x+7.5, y-5, 6, 0, Math.PI*2);
+  ctx.fillStyle = "#ffcc99";
+  ctx.fill();
+
+  // eyes
+  ctx.fillStyle = "black";
+  ctx.fillRect(x+5,y-6,2,2);
+  ctx.fillRect(x+9,y-6,2,2);
+}
 
 // LOOP
 function update(){
@@ -216,16 +245,16 @@ function update(){
   player.velocity+=0.4;
   player.y+=player.velocity;
 
-  ctx.fillRect(player.x,player.y,20,20);
+  drawPlayer(data);
 
   // obstacles
   obstacles.forEach(o=>{
     o.x-=2;
 
-    ctx.fillRect(o.x,0,o.w,o.top);
-    ctx.fillRect(o.x,500-o.bottom,o.w,o.bottom);
+    drawBrick(o.x,0,o.w,o.top);
+    drawBrick(o.x,500-o.bottom,o.w,o.bottom);
 
-    if(player.x<o.x+o.w && player.x+20>o.x &&
+    if(player.x<o.x+o.w && player.x+15>o.x &&
       (player.y<o.top || player.y+20>500-o.bottom)){
         gameOver=true;
         playSound(150,0.4);
@@ -236,11 +265,12 @@ function update(){
   coinsArr.forEach((c,i)=>{
     c.x-=2;
 
+    ctx.fillStyle="gold";
     ctx.beginPath();
     ctx.arc(c.x,c.y,8,0,Math.PI*2);
     ctx.fill();
 
-    if(player.x<c.x+10 && player.x+20>c.x &&
+    if(player.x<c.x+10 && player.x+15>c.x &&
        player.y<c.y+10 && player.y+20>c.y){
         data.coins++;
         coinsArr.splice(i,1);
@@ -253,6 +283,7 @@ function update(){
   }
 
   score++;
+  ctx.fillStyle="black";
   ctx.fillText("Score:"+score,10,20);
 
   if(score>data.bestScore){
@@ -268,7 +299,8 @@ function showMenu(){
   if(actions.innerHTML===""){
     actions.innerHTML=`
       <button onclick="dailyReward()">🎁 Daily (20)</button>
-      <button class="donate" onclick="donate()">💰 Support Me</button>
+      <button class="skin" onclick="buySkin()">✨ Gold Skin (100)</button>
+      <button class="donate" onclick="donate()">💰 Support</button>
     `;
   }
 }
@@ -285,6 +317,16 @@ function dailyReward(){
   }
 }
 
+function buySkin(){
+  let d=getUserData();
+  if(d.coins>=100){
+    d.coins-=100;
+    d.skin="gold";
+    saveUserData(d);
+    alert("✨ Gold Skin Unlocked!");
+  } else donate();
+}
+
 function revive(){
   let d=getUserData();
   if(d.coins>=10){
@@ -294,12 +336,10 @@ function revive(){
     player.velocity=0;
     actions.innerHTML="";
     saveUserData(d);
-  } else {
-    donate();
-  }
+  } else donate();
 }
 
-// 💰 DONATION BUTTON (YOUR LINK)
+// DONATE
 function donate(){
   window.open("https://bbmpacquiao-coder.github.io/morris-donation/", "_blank");
 }
@@ -333,4 +373,7 @@ update();
 </body>
 </html>  
  
-   
+ 
+  
+ 
+  
