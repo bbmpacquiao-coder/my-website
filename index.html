@@ -1,51 +1,3 @@
- <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Endless Jump Game</title>
-
-<style>
-body {
-  margin: 0;
-  background: #0f2027;
-  color: white;
-  text-align: center;
-  font-family: Arial, sans-serif;
-}
-
-canvas {
-  background: #203a43;
-  display: block;
-  margin: auto;
-  border-radius: 10px;
-}
-
-button {
-  margin-top: 10px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.donate {
-  background: #ff4b2b;
-  color: white;
-}
-</style>
-</head>
-
-<body>
-
-<h2>🚀 Endless Jump Game</h2>
-<p>Tap or press SPACE to jump</p>
-
-<canvas id="game" width="350" height="500"></canvas>
-
-<br>
-<button class="donate" onclick="donate()">❤️ Support Me</button>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -62,6 +14,7 @@ let jump = -8;
 
 let obstacles = [];
 let score = 0;
+let gameStarted = false;
 
 function createObstacle() {
   let height = Math.random() * 200 + 50;
@@ -76,7 +29,16 @@ function createObstacle() {
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // player physics
+  // START SCREEN
+  if (!gameStarted) {
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Click or Press SPACE to Start", 40, 250);
+    requestAnimationFrame(update);
+    return;
+  }
+
+  // physics
   player.velocity += gravity;
   player.y += player.velocity;
 
@@ -98,24 +60,19 @@ function update() {
       player.x + player.size > obs.x &&
       (player.y < obs.top || player.y + player.size > canvas.height - obs.bottom)
     ) {
-      alert("Game Over! Score: " + score);
-      document.location.reload();
+      endGame();
     }
 
-    // score
-    if (obs.x === player.x) score++;
-
-    // remove old
     if (obs.x < -30) obstacles.splice(i, 1);
   });
 
   // ground/ceiling
   if (player.y > canvas.height || player.y < 0) {
-    alert("Game Over! Score: " + score);
-    document.location.reload();
+    endGame();
   }
 
-  // score display
+  // score
+  score++;
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
   ctx.fillText("Score: " + score, 10, 30);
@@ -123,28 +80,33 @@ function update() {
   requestAnimationFrame(update);
 }
 
+function endGame() {
+  alert("Game Over! Score: " + score);
+  document.location.reload();
+}
+
 // controls
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") player.velocity = jump;
-});
-
-canvas.addEventListener("click", () => {
+function startGame() {
+  if (!gameStarted) {
+    gameStarted = true;
+    setInterval(createObstacle, 1500);
+  }
   player.velocity = jump;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") startGame();
 });
 
-// obstacle loop
-setInterval(createObstacle, 1500);
+canvas.addEventListener("click", startGame);
 
-// start game
+// start loop
 update();
 
 // donation
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
-</script>
-
-</body>
-</html>
- 
- 
+</script>  
+  
+  
