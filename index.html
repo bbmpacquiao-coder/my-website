@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Ultra Smooth Game</title>
+<title>Easy Tap Game</title>
 
 <style>
 html, body {
@@ -33,34 +33,30 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// ===== ULTRA SMOOTH PHYSICS =====
-let GRAVITY = 900;        // pixels/sec²
-let JUMP_FORCE = -300;    // jump impulse
-let DRAG = 0.98;          // air resistance
-let SPEED = 120;          // obstacle speed
+// ===== ULTRA EASY PHYSICS =====
+const GRAVITY = 400;      // slow fall
+const JUMP = -150;        // very soft tap
+const DRAG = 0.90;        // floaty
+const SPEED = 90;         // slow obstacles
 
-let player, obstacles, score, gameStarted, gameOver;
+let player, obstacles, score, started, over;
 
 // RESET
 function reset(){
-  player = {
-    x: 60,
-    y: 200,
-    velocity: 0
-  };
+  player = { x:60, y:200, v:0 };
   obstacles = [];
   score = 0;
-  gameStarted = false;
-  gameOver = false;
+  started = false;
+  over = false;
 }
 reset();
 
-// SPAWN
+// SPAWN OBSTACLES (EASIER GAP)
 setInterval(()=>{
-  if(!gameStarted || gameOver) return;
+  if(!started || over) return;
 
-  let gap = 140;
-  let top = Math.random()*200 + 50;
+  let gap = 170; // bigger gap = easier
+  let top = Math.random()*180 + 60;
 
   obstacles.push({
     x: canvas.width,
@@ -68,34 +64,37 @@ setInterval(()=>{
     top: top,
     bottom: canvas.height - (top + gap)
   });
-}, 1600);
+}, 1800);
 
-// TIME BASED LOOP
-let lastTime = 0;
+// TIME LOOP
+let last = 0;
 
-function update(time){
-  let dt = (time - lastTime) / 1000; // seconds
-  lastTime = time;
+function update(t){
+  let dt = (t - last)/1000;
+  last = t;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if(!gameStarted){
+  if(!started){
     ctx.fillText("TAP TO START",110,250);
     requestAnimationFrame(update);
     return;
   }
 
-  if(gameOver){
+  if(over){
     ctx.fillText("GAME OVER",120,230);
     ctx.fillText("Tap to Restart",100,260);
     requestAnimationFrame(update);
     return;
   }
 
-  // ===== PHYSICS =====
-  player.velocity += GRAVITY * dt;
-  player.velocity *= DRAG; // smooth resistance
-  player.y += player.velocity * dt;
+  // ===== SMOOTH PHYSICS =====
+  player.v += GRAVITY * dt;
+  player.v *= DRAG;
+  player.y += player.v * dt;
+
+  // LIMIT TOP (no instant death)
+  if(player.y < 0) player.y = 0;
 
   // PLAYER
   ctx.fillStyle = "blue";
@@ -109,16 +108,16 @@ function update(time){
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
-    // collision
+    // collision (more forgiving)
     if(player.x < o.x+o.w && player.x+15 > o.x &&
-      (player.y < o.top || player.y+20 > canvas.height-o.bottom)){
-        gameOver = true;
+      (player.y < o.top-5 || player.y+20 > canvas.height-o.bottom+5)){
+        over = true;
     }
   });
 
-  // bounds
-  if(player.y > canvas.height || player.y < 0){
-    gameOver = true;
+  // GROUND ONLY death
+  if(player.y > canvas.height){
+    over = true;
   }
 
   score += dt * 60;
@@ -127,23 +126,23 @@ function update(time){
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL (ULTRA SMOOTH)
+// TAP CONTROL (SUPER STABLE)
 function tap(){
-  if(!gameStarted){
-    gameStarted = true;
+  if(!started){
+    started = true;
     return;
   }
 
-  if(gameOver){
+  if(over){
     reset();
     return;
   }
 
-  // smooth impulse (not instant jerk)
-  player.velocity += JUMP_FORCE;
+  // 🔥 KEY FIX: no stacking velocity
+  player.v = JUMP;
 }
 
-// EVENTS
+// ANDROID EVENTS
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
