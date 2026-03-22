@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -58,27 +58,65 @@ let speed = 2;
 let bestScore = localStorage.getItem("bestScore") || 0;
 let particles = [];
 let shake = 0;
-let audioUnlocked = false;
 
-// 🔊 SOUND (FIXED)
-const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3");
-const hitSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3");
-const scoreSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.mp3");
+// 🔊 WEB AUDIO (100% WORKING)
+let audioCtx = null;
 
-[jumpSound, hitSound, scoreSound].forEach(s => {
-  s.preload = "auto";
-  s.volume = 0.5;
-});
-
-// 🔓 unlock audio
-function unlockAudio() {
-  if (!audioUnlocked) {
-    jumpSound.play().then(() => {
-      jumpSound.pause();
-      jumpSound.currentTime = 0;
-      audioUnlocked = true;
-    }).catch(() => {});
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
+}
+
+function playJumpSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "square";
+  osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playHitSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.4);
+}
+
+function playScoreSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
 }
 
 // RESET
@@ -183,7 +221,6 @@ function update() {
 
   player.velocity += gravity;
   player.y += player.velocity;
-  if (player.velocity > 10) player.velocity = 10;
 
   let pulse = Math.sin(Date.now() * 0.01) * 2;
   ctx.fillStyle = "lime";
@@ -204,12 +241,7 @@ function update() {
     ) {
       gameOver = true;
       shake = 10;
-
-      if (audioUnlocked) {
-        hitSound.currentTime = 0;
-        hitSound.play().catch(() => {});
-      }
-
+      playHitSound();
       createExplosion(player.x, player.y);
     }
 
@@ -222,22 +254,13 @@ function update() {
   if (player.y > canvas.height || player.y < 0) {
     gameOver = true;
     shake = 10;
-
-    if (audioUnlocked) {
-      hitSound.currentTime = 0;
-      hitSound.play().catch(() => {});
-    }
-
+    playHitSound();
     createExplosion(player.x, player.y);
   }
 
   score++;
 
-  if (score % 50 === 0 && audioUnlocked) {
-    scoreSound.currentTime = 0;
-    scoreSound.play().catch(() => {});
-  }
-
+  if (score % 50 === 0) playScoreSound();
   if (score % 200 === 0) speed += 0.3;
 
   ctx.fillStyle = "white";
@@ -254,7 +277,7 @@ function update() {
 
 // CONTROLS
 function handleInput() {
-  unlockAudio();
+  initAudio(); // 🔥 unlock audio
 
   if (!gameStarted) {
     gameStarted = true;
@@ -267,11 +290,7 @@ function handleInput() {
   }
 
   player.velocity = jump;
-
-  if (audioUnlocked) {
-    jumpSound.currentTime = 0;
-    jumpSound.play().catch(() => {});
-  }
+  playJumpSound();
 }
 
 document.addEventListener("keydown", e => {
@@ -289,7 +308,7 @@ function donate() {
 </script>
 
 </body>
-</html> 
+</html>
  
   
- 
+  
