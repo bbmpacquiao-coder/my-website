@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -20,9 +20,7 @@ canvas {
   border-radius: 10px;
 }
 
-#actions {
-  margin-top: 10px;
-}
+#actions { margin-top: 10px; }
 
 button {
   padding: 10px 15px;
@@ -32,18 +30,26 @@ button {
   cursor: pointer;
 }
 
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin: 5px;
+}
+
 .revive { background: gold; }
 .restart { background: #333; color: white; }
 .donate { background: #ff4b2b; color: white; }
 .skin { background: purple; color: white; }
 .reward { background: green; color: white; }
+.logout { background: black; color: white; }
 </style>
 </head>
 
 <body>
 
 <h2>🍄 Ultimate Money Game</h2>
-<p>Earn coins. Upgrade. Support ❤️</p>
+<div id="userInfo"></div>
 
 <canvas id="game" width="350" height="500"></canvas>
 
@@ -53,16 +59,57 @@ button {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const actions = document.getElementById("actions");
+const userInfo = document.getElementById("userInfo");
 
-// STATE (persistent)
-let coins = parseInt(localStorage.getItem("coins")) || 0;
-let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
-let skin = localStorage.getItem("skin") || "red";
-let doubleCoins = localStorage.getItem("doubleCoins") === "true";
+// ACCOUNT SYSTEM
+let currentUser = localStorage.getItem("currentUser");
 
-// TEMP
+function getUserData(){
+  return JSON.parse(localStorage.getItem("user_"+currentUser)) || {
+    coins:0,
+    bestScore:0,
+    skin:"red",
+    doubleCoins:false,
+    lastReward:0
+  };
+}
+
+function saveUserData(data){
+  localStorage.setItem("user_"+currentUser, JSON.stringify(data));
+}
+
+// LOGIN UI
+function showLogin(){
+  actions.innerHTML = `
+    <input id="email" placeholder="Enter email">
+    <button onclick="login()">Login / Register</button>
+  `;
+}
+
+function login(){
+  const email = document.getElementById("email").value;
+  if(!email) return alert("Enter email!");
+
+  currentUser = email;
+  localStorage.setItem("currentUser", email);
+  actions.innerHTML="";
+  updateUserInfo();
+}
+
+function logout(){
+  localStorage.removeItem("currentUser");
+  location.reload();
+}
+
+function updateUserInfo(){
+  userInfo.innerHTML = currentUser 
+    ? "👤 " + currentUser + " <button class='logout' onclick='logout()'>Logout</button>"
+    : "";
+}
+
+// GAME STATE
 let player, obstacles, coinsArr;
-let score, gameStarted, gameOver, speed, combo;
+let score, gameStarted, gameOver, speed;
 
 // AUDIO
 let audioCtx;
@@ -89,7 +136,6 @@ function resetGame(){
   obstacles=[];
   coinsArr=[];
   score=0;
-  combo=0;
   speed=2;
   gameStarted=false;
   gameOver=false;
@@ -97,18 +143,18 @@ function resetGame(){
 }
 resetGame();
 
-// DAILY REWARD
+// DAILY REWARD (BIG)
 function dailyReward(){
-  let last = localStorage.getItem("lastReward");
+  let data = getUserData();
   let now = Date.now();
 
-  if(!last || now - last > 86400000){
-    coins += 20;
-    localStorage.setItem("coins", coins);
-    localStorage.setItem("lastReward", now);
-    alert("🎁 You got 20 FREE coins!");
+  if(now - data.lastReward > 86400000){
+    data.coins += 100; // 🔥 BIG REWARD
+    data.lastReward = now;
+    saveUserData(data);
+    alert("🎁 You got 100 coins!");
   } else {
-    alert("Come back tomorrow for reward!");
+    alert("Come back tomorrow!");
   }
 }
 
@@ -128,10 +174,17 @@ setInterval(createCoin,1200);
 function update(){
   ctx.clearRect(0,0,350,500);
 
+  if(!currentUser){
+    showLogin();
+    return;
+  }
+
+  let data = getUserData();
+
   if(!gameStarted){
     ctx.fillText("Click to Start",110,240);
-    ctx.fillText("Coins:"+coins,130,270);
-    ctx.fillText("Best:"+bestScore,130,300);
+    ctx.fillText("Coins:"+data.coins,130,270);
+    ctx.fillText("Best:"+data.bestScore,130,300);
 
     showMenu();
     requestAnimationFrame(update);
@@ -139,7 +192,7 @@ function update(){
   }
 
   if(gameOver){
-    drawGameOver();
+    drawGameOver(data);
     requestAnimationFrame(update);
     return;
   }
@@ -148,8 +201,8 @@ function update(){
   player.velocity+=0.4;
   player.y+=player.velocity;
 
-  // PLAYER (skin)
-  ctx.fillStyle = skin === "gold" ? "gold" : "red";
+  // player
+  ctx.fillStyle = data.skin==="gold" ? "gold" : "red";
   ctx.fillRect(player.x,player.y,20,20);
 
   // obstacles
@@ -163,7 +216,7 @@ function update(){
 
     if(player.x<o.x+o.w && player.x+20>o.x &&
       (player.y<o.top || player.y+20>500-o.bottom)){
-        endGame();
+        endGame(data);
     }
 
     if(o.x<-40){ obstacles.splice(i,1); i--; }
@@ -181,9 +234,8 @@ function update(){
 
     if(player.x<c.x+10 && player.x+20>c.x &&
        player.y<c.y+10 && player.y+20>c.y){
-        let gain = doubleCoins ? 2 : 1;
-        coins += gain;
-        combo++;
+        let gain = data.doubleCoins ? 2 : 1;
+        data.coins += gain;
         sound(800,0.1);
         coinsArr.splice(i,1);
         i--;
@@ -193,47 +245,45 @@ function update(){
   }
 
   if(player.y>500 || player.y<0){
-    endGame();
+    endGame(data);
   }
 
   score++;
-
-  // 💀 difficulty spike
   if(score%120===0) speed+=0.6;
 
   ctx.fillStyle="black";
   ctx.fillText("Score:"+score,10,20);
-  ctx.fillText("Coins:"+coins,250,20);
-  ctx.fillText("Combo:"+combo,130,20);
+  ctx.fillText("Coins:"+data.coins,250,20);
+
+  saveUserData(data);
 
   requestAnimationFrame(update);
 }
 
-// MENU (monetization)
+// MENU
 function showMenu(){
   if(actions.innerHTML===""){
     actions.innerHTML = `
-      <button class="reward" onclick="dailyReward()">🎁 Daily Reward</button>
-      <button class="skin" onclick="buySkin()">🎨 Unlock Gold Skin (50 coins)</button>
-      <button class="donate" onclick="donate()">💰 Donate (Unlock x2 coins)</button>
+      <button class="reward" onclick="dailyReward()">🎁 Daily Reward (100)</button>
+      <button class="skin" onclick="buySkin()">🎨 Gold Skin (100 coins)</button>
+      <button class="donate" onclick="donate()">💰 Donate (x2 coins)</button>
     `;
   }
 }
 
 // GAME OVER
-function drawGameOver(){
+function drawGameOver(data){
   ctx.fillText("Game Over",120,200);
   ctx.fillText("Score:"+score,120,230);
-  ctx.fillText("Coins:"+coins,120,260);
 
-  if(score>bestScore){
-    bestScore=score;
-    localStorage.setItem("bestScore",bestScore);
+  if(score>data.bestScore){
+    data.bestScore=score;
+    saveUserData(data);
   }
 
   if(actions.innerHTML===""){
     actions.innerHTML = `
-      <button class="revive" onclick="revive(15)">❤️ Revive (15 coins)</button>
+      <button class="revive" onclick="revive(20)">❤️ Revive (20 coins)</button>
       <button class="donate" onclick="donate()">💰 Not enough? Support</button>
       <button class="restart" onclick="restart()">🔁 Restart</button>
     `;
@@ -241,10 +291,10 @@ function drawGameOver(){
 }
 
 // END
-function endGame(){
+function endGame(data){
   gameOver=true;
   sound(150,0.4);
-  localStorage.setItem("coins", coins);
+  saveUserData(data);
 }
 
 // CONTROLS
@@ -267,14 +317,16 @@ document.addEventListener("keydown",e=>{
   if(e.code==="Space") handle();
 });
 
-// 💸 CORE SYSTEM
+// CORE
 function revive(cost){
-  if(coins>=cost){
-    coins-=cost;
+  let data = getUserData();
+  if(data.coins>=cost){
+    data.coins-=cost;
     gameOver=false;
     player.y=200;
     player.velocity=0;
     actions.innerHTML="";
+    saveUserData(data);
   } else {
     donate();
   }
@@ -285,27 +337,33 @@ function restart(){
 }
 
 function buySkin(){
-  if(coins>=50){
-    coins-=50;
-    skin="gold";
-    localStorage.setItem("skin",skin);
-    localStorage.setItem("coins",coins);
-    alert("🎨 Gold Skin Unlocked!");
-  } else {
-    donate();
-  }
+  let data = getUserData();
+  if(data.coins>=100){
+    data.coins-=100;
+    data.skin="gold";
+    saveUserData(data);
+    alert("Skin unlocked!");
+  } else donate();
 }
 
 function donate(){
-  localStorage.setItem("doubleCoins", true);
-  alert("🚀 x2 Coins Activated!");
+  let data = getUserData();
+  data.doubleCoins=true;
+  saveUserData(data);
+  alert("x2 Coins Activated!");
   window.location.href="https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 
+// INIT
+updateUserInfo();
 update();
 </script>
 
 </body>
-</html>
+</html>  
+ 
+ 
+  
+ 
   
   
