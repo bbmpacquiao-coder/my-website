@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -45,8 +45,8 @@ button {
 
 <br>
 <button class="donate" onclick="donate()">❤️ Support Me</button>
- 
- <script>
+
+<script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -59,10 +59,20 @@ let bestScore = localStorage.getItem("bestScore") || 0;
 let particles = [];
 let shake = 0;
 
-// 🔊 SOUND
+// 🔊 SOUND SYSTEM (FIXED + RELIABLE)
 const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3");
 const hitSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3");
+const scoreSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.mp3");
 
+jumpSound.preload = "auto";
+hitSound.preload = "auto";
+scoreSound.preload = "auto";
+
+jumpSound.volume = 0.5;
+hitSound.volume = 0.6;
+scoreSound.volume = 0.3;
+
+// RESET GAME
 function resetGame() {
   player = { x: 50, y: 200, size: 20, velocity: 0 };
   obstacles = [];
@@ -75,6 +85,7 @@ function resetGame() {
 
 resetGame();
 
+// OBSTACLES
 function createObstacle() {
   let gap = 150 - Math.min(score / 10, 70);
   let height = Math.random() * 150 + 80;
@@ -103,7 +114,8 @@ function createExplosion(x, y) {
 }
 
 function updateParticles() {
-  particles.forEach((p, i) => {
+  for (let i = 0; i < particles.length; i++) {
+    let p = particles[i];
     p.x += p.vx;
     p.y += p.vy;
     p.life--;
@@ -111,22 +123,25 @@ function updateParticles() {
     ctx.fillStyle = "yellow";
     ctx.fillRect(p.x, p.y, 3, 3);
 
-    if (p.life <= 0) particles.splice(i, 1);
-  });
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      i--;
+    }
+  }
 }
 
 // 🎮 MAIN LOOP
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // SHAKE
+  // SCREEN SHAKE
   if (shake > 0) {
     ctx.save();
     ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
     shake--;
   }
 
-  // START
+  // START SCREEN
   if (!gameStarted && !gameOver) {
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
@@ -156,22 +171,21 @@ function update() {
     updateParticles();
 
     if (shake > 0) ctx.restore();
-
     requestAnimationFrame(update);
     return;
   }
 
-  // physics
+  // PHYSICS
   player.velocity += gravity;
   player.y += player.velocity;
   if (player.velocity > 10) player.velocity = 10;
 
-  // ✨ PLAYER ANIMATION (pulse)
+  // PLAYER (animated)
   let pulse = Math.sin(Date.now() * 0.01) * 2;
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.size + pulse, player.size + pulse);
 
-  // obstacles
+  // OBSTACLES
   for (let i = 0; i < obstacles.length; i++) {
     let obs = obstacles[i];
     obs.x -= speed;
@@ -180,6 +194,7 @@ function update() {
     ctx.fillRect(obs.x, 0, obs.width, obs.top);
     ctx.fillRect(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
 
+    // COLLISION
     if (
       player.x < obs.x + obs.width &&
       player.x + player.size > obs.x &&
@@ -187,7 +202,10 @@ function update() {
     ) {
       gameOver = true;
       shake = 10;
-      hitSound.play();
+
+      hitSound.currentTime = 0;
+      hitSound.play().catch(() => {});
+
       createExplosion(player.x, player.y);
     }
 
@@ -197,16 +215,27 @@ function update() {
     }
   }
 
-  // bounds
+  // BOUNDS
   if (player.y > canvas.height || player.y < 0) {
     gameOver = true;
     shake = 10;
-    hitSound.play();
+
+    hitSound.currentTime = 0;
+    hitSound.play().catch(() => {});
+
     createExplosion(player.x, player.y);
   }
 
-  // difficulty
+  // SCORE
   score++;
+
+  // 🔊 score sound (dopamine)
+  if (score % 50 === 0) {
+    scoreSound.currentTime = 0;
+    scoreSound.play().catch(() => {});
+  }
+
+  // DIFFICULTY
   if (score % 200 === 0) speed += 0.3;
 
   // UI
@@ -222,7 +251,7 @@ function update() {
   requestAnimationFrame(update);
 }
 
-// controls
+// CONTROLS
 function handleInput() {
   if (!gameStarted) {
     gameStarted = true;
@@ -235,8 +264,9 @@ function handleInput() {
   }
 
   player.velocity = jump;
+
   jumpSound.currentTime = 0;
-  jumpSound.play();
+  jumpSound.play().catch(() => {});
 }
 
 document.addEventListener("keydown", e => {
@@ -252,14 +282,6 @@ function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 </script>
- 
- 
- 
- 
- 
- 
- 
 
 </body>
-</html> 
-  
+</html>
