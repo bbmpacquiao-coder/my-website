@@ -1,146 +1,150 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Play & Support Morris</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+<title>Endless Jump Game</title>
 
 <style>
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  background: #0f2027;
   color: white;
   text-align: center;
-  padding: 20px;
+  font-family: Arial, sans-serif;
 }
 
-.container {
-  position: relative;
-  z-index: 10;
-  max-width: 400px;
+canvas {
+  background: #203a43;
+  display: block;
   margin: auto;
-  background: rgba(255,255,255,0.05);
-  padding: 20px;
-  border-radius: 20px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.5);
-}
-
-h1 {
-  font-weight: 600;
-}
-
-.slot {
-  font-size: 50px;
-  margin: 20px 0;
+  border-radius: 10px;
 }
 
 button {
-  padding: 12px 20px;
+  margin-top: 10px;
+  padding: 10px 15px;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  margin: 5px;
-  transition: 0.2s;
 }
 
-button:hover {
-  transform: scale(1.05);
-}
-
-.play-btn {
-  background: #00c6ff;
-  color: black;
-}
-
-.donate-btn {
+.donate {
   background: #ff4b2b;
   color: white;
-  width: 100%;
-}
-
-.coins {
-  font-size: 18px;
-  margin-top: 10px;
-}
-
-.win {
-  color: #00ffcc;
-  font-weight: bold;
-}
-
-.lose {
-  color: #ff4b2b;
-}
-
-.footer {
-  margin-top: 20px;
-  font-size: 14px;
-  opacity: 0.8;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>🎰 Mini Casino Fun</h1>
-  <p>Play for fun! Support if you enjoy ❤️</p>
+<h2>🚀 Endless Jump Game</h2>
+<p>Tap or press SPACE to jump</p>
 
-  <div class="slot" id="slot">🍒 🍋 🍉</div>
+<canvas id="game" width="350" height="500"></canvas>
 
-  <button class="play-btn" onclick="spin()">SPIN</button>
-
-  <div class="coins">Coins: <span id="coins">100</span></div>
-  <div id="result"></div>
-
-  <hr>
-
-  <!-- ❤️ DONATION BUTTON -->
-  <button class="donate-btn" onclick="donate()">❤️ Support Me (Donate)</button>
-
-  <div class="footer">
-    Made by Morris Zoleta 💙
-  </div>
-</div>
+<br>
+<button class="donate" onclick="donate()">❤️ Support Me</button>
 
 <script>
-let coins = 100;
-const emojis = ["🍒","🍋","🍉","🍇","⭐"];
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-function spin() {
-  if (coins <= 0) {
-    document.getElementById("result").innerHTML = "No coins left!";
-    return;
-  }
+let player = {
+  x: 50,
+  y: 200,
+  size: 20,
+  velocity: 0
+};
 
-  coins -= 10;
+let gravity = 0.5;
+let jump = -8;
 
-  let a = emojis[Math.floor(Math.random()*emojis.length)];
-  let b = emojis[Math.floor(Math.random()*emojis.length)];
-  let c = emojis[Math.floor(Math.random()*emojis.length)];
+let obstacles = [];
+let score = 0;
 
-  document.getElementById("slot").innerHTML = `${a} ${b} ${c}`;
-
-  if (a === b && b === c) {
-    coins += 50;
-    document.getElementById("result").innerHTML = "<span class='win'>🔥 JACKPOT! +50 coins</span>";
-  } else {
-    document.getElementById("result").innerHTML = "<span class='lose'>Try again!</span>";
-  }
-
-  document.getElementById("coins").innerText = coins;
+function createObstacle() {
+  let height = Math.random() * 200 + 50;
+  obstacles.push({
+    x: canvas.width,
+    width: 30,
+    top: height,
+    bottom: canvas.height - height - 120
+  });
 }
 
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // player physics
+  player.velocity += gravity;
+  player.y += player.velocity;
+
+  // draw player
+  ctx.fillStyle = "lime";
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+
+  // obstacles
+  obstacles.forEach((obs, i) => {
+    obs.x -= 3;
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(obs.x, 0, obs.width, obs.top);
+    ctx.fillRect(obs.x, canvas.height - obs.bottom, obs.width, obs.bottom);
+
+    // collision
+    if (
+      player.x < obs.x + obs.width &&
+      player.x + player.size > obs.x &&
+      (player.y < obs.top || player.y + player.size > canvas.height - obs.bottom)
+    ) {
+      alert("Game Over! Score: " + score);
+      document.location.reload();
+    }
+
+    // score
+    if (obs.x === player.x) score++;
+
+    // remove old
+    if (obs.x < -30) obstacles.splice(i, 1);
+  });
+
+  // ground/ceiling
+  if (player.y > canvas.height || player.y < 0) {
+    alert("Game Over! Score: " + score);
+    document.location.reload();
+  }
+
+  // score display
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+
+  requestAnimationFrame(update);
+}
+
+// controls
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") player.velocity = jump;
+});
+
+canvas.addEventListener("click", () => {
+  player.velocity = jump;
+});
+
+// obstacle loop
+setInterval(createObstacle, 1500);
+
+// start game
+update();
+
+// donation
 function donate() {
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 </script>
 
 </body>
-</html> 
-
+</html>
+ 
  
