@@ -2,80 +2,96 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- 🔥 CRITICAL FIX: disables zoom -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Ultimate Money Game</title>
 
 <style>
-body {
+html, body {
   margin: 0;
-  background: linear-gradient(#5c94fc, #cce6ff);
-  text-align: center;
+  height: 100%;
+  overflow: hidden; /* prevents jump */
   font-family: Arial;
+  background: linear-gradient(#5c94fc, #cce6ff);
 }
 
-canvas {
-  display: block;
-  margin: 10px auto;
-  background: #87ceeb;
-  border-radius: 10px;
-  touch-action: manipulation;
+/* CENTER EVERYTHING */
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-button, input {
-  padding: 12px;
-  margin: 5px;
-  border-radius: 10px;
-  border: none;
-  font-size: 16px;
-}
-
+/* LOGIN */
 .loginBox {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  margin: 30px auto;
   width: 80%;
   max-width: 300px;
+  text-align: center;
+}
+
+/* INPUT FIX (IMPORTANT) */
+input {
+  font-size: 16px; /* prevents iOS zoom */
+  padding: 12px;
+  width: 90%;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 .hidden { display: none; }
 
-.leaderboard {
-  background: rgba(0,0,0,0.2);
-  padding: 10px;
-  margin: 10px;
+/* GAME */
+canvas {
+  background: #87ceeb;
   border-radius: 10px;
+  margin-top: 10px;
+  touch-action: manipulation;
 }
 
 .donate { background: #ff4b2b; color: white; }
-.skin { background: gold; }
 </style>
 </head>
 
 <body>
 
-<h2>🍄 Ultimate Money Game</h2>
+<div class="container">
 
-<!-- LOGIN SCREEN (SEPARATE) -->
+<!-- LOGIN -->
 <div id="loginScreen" class="loginBox">
   <h3>Login</h3>
   <input id="email" placeholder="Enter email">
-  <br>
   <button onclick="login()">Start Game</button>
 </div>
 
-<!-- GAME UI -->
+<!-- GAME -->
 <div id="gameUI" class="hidden">
   <div id="userInfo"></div>
-  <div class="leaderboard" id="leaderboard"></div>
   <canvas id="game" width="350" height="500"></canvas>
   <div id="actions"></div>
+</div>
+
 </div>
 
 <script>
 let currentUser = localStorage.getItem("currentUser");
 
-// LOGIN FIRST (NO GAME LOOP YET)
+// LOGIN
 function login(){
   let email = document.getElementById("email").value;
   if(!email) return alert("Enter email!");
@@ -86,62 +102,24 @@ function login(){
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("gameUI").classList.remove("hidden");
 
-  initGame(); // START GAME ONLY AFTER LOGIN
+  startGame();
 }
 
-// AUTO LOGIN (if already saved)
+// AUTO LOGIN
 if(currentUser){
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("gameUI").classList.remove("hidden");
-  initGame();
+  startGame();
 }
 
-// ================= GAME =================
-
-function initGame(){
+// GAME
+function startGame(){
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const actions = document.getElementById("actions");
-const userInfo = document.getElementById("userInfo");
-const leaderboardDiv = document.getElementById("leaderboard");
 
-// DATA
-function getUserData(){
-  return JSON.parse(localStorage.getItem("user_"+currentUser)) || {
-    coins:0,bestScore:0,lastReward:0,skin:"normal"
-  };
-}
-function saveUserData(data){
-  localStorage.setItem("user_"+currentUser, JSON.stringify(data));
-}
-
-// LEADERBOARD
-function getLeaderboard(){
-  return JSON.parse(localStorage.getItem("leaderboard")) || [];
-}
-function saveScore(name,score){
-  let b=getLeaderboard();
-  b.push({name,score});
-  b.sort((a,b)=>b.score-a.score);
-  b=b.slice(0,5);
-  localStorage.setItem("leaderboard",JSON.stringify(b));
-  renderLeaderboard();
-}
-function renderLeaderboard(){
-  let b=getLeaderboard();
-  let html="<h3>🏆 Leaderboard</h3>";
-  b.forEach((p,i)=> html+=`<div>${i+1}. ${p.name} - ${p.score}</div>`);
-  leaderboardDiv.innerHTML=html;
-}
-
-// UI
-userInfo.innerHTML = "👤 " + currentUser;
-renderLeaderboard();
-
-// GAME VARS
 let player={x:50,y:200,velocity:0};
-let obstacles=[], coinsArr=[];
+let obstacles=[];
 let score=0, gameStarted=false, gameOver=false;
 
 // SPAWN
@@ -149,43 +127,22 @@ setInterval(()=>{
   obstacles.push({
     x:350,
     w:40,
-    top:Math.random()*200+50,
-    bottom:150
+    top:Math.random()*200+50
   });
 },1600);
-
-setInterval(()=>{
-  coinsArr.push({
-    x:350,
-    y:Math.random()*400+50
-  });
-},1200);
 
 // LOOP
 function update(){
   ctx.clearRect(0,0,350,500);
 
-  let data=getUserData();
-
   if(!gameStarted){
-    ctx.fillText("Tap to Start",110,230);
+    ctx.fillText("Tap to Start",120,250);
     requestAnimationFrame(update);
     return;
   }
 
   if(gameOver){
-    ctx.fillText("Game Over",120,220);
-    ctx.fillText("Score: "+score,120,250);
-
-    saveScore(currentUser,score);
-
-    if(actions.innerHTML===""){
-      actions.innerHTML=`
-        <button onclick="location.reload()">🔁 Restart</button>
-        <button class="donate" onclick="donate()">💰 Donate</button>
-      `;
-    }
-
+    ctx.fillText("Game Over",120,250);
     requestAnimationFrame(update);
     return;
   }
@@ -193,37 +150,19 @@ function update(){
   player.velocity+=0.4;
   player.y+=player.velocity;
 
-  // PLAYER
-  ctx.fillStyle = data.skin==="gold" ? "gold" : "blue";
-  ctx.fillRect(player.x, player.y, 15, 20);
+  ctx.fillStyle="blue";
+  ctx.fillRect(player.x,player.y,15,20);
 
-  // OBSTACLES
   obstacles.forEach(o=>{
     o.x-=2;
 
-    ctx.fillStyle="#b5522b";
+    ctx.fillStyle="brown";
     ctx.fillRect(o.x,0,o.w,o.top);
-    ctx.fillRect(o.x,350,o.w,150);
+    ctx.fillRect(o.x,o.top+130,o.w,500);
 
     if(player.x<o.x+o.w && player.x+15>o.x &&
-      (player.y<o.top || player.y+20>350)){
+      (player.y<o.top || player.y+20>o.top+130)){
         gameOver=true;
-    }
-  });
-
-  // COINS
-  coinsArr.forEach((c,i)=>{
-    c.x-=2;
-
-    ctx.beginPath();
-    ctx.arc(c.x,c.y,8,0,Math.PI*2);
-    ctx.fillStyle="gold";
-    ctx.fill();
-
-    if(player.x<c.x+10 && player.x+15>c.x &&
-       player.y<c.y+10 && player.y+20>c.y){
-        data.coins++;
-        coinsArr.splice(i,1);
     }
   });
 
@@ -234,18 +173,18 @@ function update(){
   score++;
   ctx.fillText("Score:"+score,10,20);
 
-  saveUserData(data);
   requestAnimationFrame(update);
 }
 
 // CONTROLS
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
-  handle();
+  jump();
 });
-canvas.addEventListener("click", handle);
 
-function handle(){
+canvas.addEventListener("click", jump);
+
+function jump(){
   if(!gameStarted){
     gameStarted=true;
     return;
@@ -254,14 +193,10 @@ function handle(){
   player.velocity=-7;
 }
 
-function donate(){
-  window.open("https://bbmpacquiao-coder.github.io/morris-donation/");
-}
-
-// START LOOP
+// START
 update();
 
-} // END initGame
+}
 </script>
 
 </body>
