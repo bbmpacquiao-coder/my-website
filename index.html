@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Ultimate Tap Game</title>
+<title>Ultimate Tap Game PRO</title>
 
 <style>
 html, body {
@@ -11,7 +11,6 @@ html, body {
   overflow: hidden;
   background: linear-gradient(#5c94fc, #cce6ff);
   font-family: Arial;
-  text-align: center;
 }
 
 /* GAME */
@@ -22,7 +21,6 @@ canvas {
   border-radius: 12px;
   width: 92vw;
   max-width: 360px;
-  touch-action: none;
 }
 
 /* DONATE BUTTON */
@@ -35,65 +33,62 @@ canvas {
   font-size: 16px;
   border-radius: 14px;
   border: none;
-  background: #ff4b2b;
+  background: linear-gradient(45deg,#ff416c,#ff4b2b);
   color: white;
   z-index: 9999;
-  box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 /* POPUP */
-#donatePopup {
+#popup {
   position: fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
+  top:0;left:0;
+  width:100%;height:100%;
   background: rgba(0,0,0,0.7);
   display:none;
-  align-items:center;
   justify-content:center;
+  align-items:center;
   z-index:10000;
 }
 
-.popupBox {
+.box {
   background:white;
   padding:20px;
   border-radius:18px;
-  width:85%;
-  max-width:320px;
+  width:90%;
+  max-width:330px;
   text-align:center;
 }
 
-.popupBox h2 {
-  margin-top:0;
-}
-
-.payBtn {
+/* BUTTONS */
+.btn {
   display:block;
-  margin:10px 0;
-  padding:14px;
-  border-radius:12px;
-  border:none;
-  font-size:16px;
   width:100%;
+  padding:14px;
+  margin:8px 0;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
   color:white;
 }
 
-/* PayPal */
-.paypal {
-  background:#0070ba;
+.paypal { background:#0070ba; }
+.maya { background:#00c853; }
+.copy { background:#333; }
+.close { background:#ccc; color:black; }
+
+/* QR */
+.qr {
+  width:160px;
+  margin:10px auto;
+  border-radius:10px;
 }
 
-/* Maya */
-.maya {
-  background:#00c853;
-}
-
-/* Close */
-.closeBtn {
-  margin-top:10px;
-  background:#ccc;
-  color:black;
+/* TEXT */
+.number {
+  font-weight:bold;
+  margin:10px 0;
+  font-size:18px;
 }
 </style>
 </head>
@@ -101,33 +96,40 @@ canvas {
 <body>
 
 <canvas id="game" width="360" height="520"></canvas>
-
 <button id="donateBtn">💰 Support Me</button>
 
 <!-- POPUP -->
-<div id="donatePopup">
-  <div class="popupBox">
+<div id="popup">
+  <div class="box">
+
     <h2>Support Me ❤️</h2>
+    <p>Even ₱10 helps 🙏</p>
 
-    <button class="payBtn paypal" onclick="openPayPal()">
-      Pay via PayPal
-    </button>
+    <button class="btn paypal" onclick="openPayPal()">PayPal</button>
 
-    <button class="payBtn maya" onclick="openMaya()">
-      Send via Maya
-    </button>
+    <hr>
 
-    <button class="payBtn closeBtn" onclick="closePopup()">
-      Close
-    </button>
+    <h3>Send via Maya</h3>
+
+    <!-- 🔥 REPLACE WITH YOUR QR IMAGE -->
+    <img src="https://via.placeholder.com/160" class="qr">
+
+    <div class="number">09289652830</div>
+
+    <button class="btn copy" onclick="copyNumber()">Copy Number</button>
+
+    <button class="btn maya" onclick="openMayaGuide()">Open Maya Guide</button>
+
+    <button class="btn close" onclick="closePopup()">Close</button>
+
   </div>
 </div>
 
 <script>
+// ===== GAME =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// ===== GAME =====
 const GRAVITY = 800;
 const JUMP = -250;
 const DRAG = 0.95;
@@ -167,14 +169,12 @@ function update(t){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(!started){
-    ctx.font = "20px Arial";
     ctx.fillText("TAP TO START",110,260);
     requestAnimationFrame(update);
     return;
   }
 
   if(over){
-    ctx.font = "20px Arial";
     ctx.fillText("GAME OVER",120,240);
     ctx.fillText("Tap to Restart",100,270);
     requestAnimationFrame(update);
@@ -184,8 +184,6 @@ function update(t){
   player.v += GRAVITY * dt;
   player.v *= DRAG;
   player.y += player.v * dt;
-
-  if(player.y < 0) player.y = 0;
 
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, 16, 22);
@@ -198,17 +196,14 @@ function update(t){
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
     if(player.x < o.x+o.w && player.x+16 > o.x &&
-      (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
+      (player.y < o.top || player.y+22 > canvas.height-o.bottom)){
         over = true;
     }
   });
 
-  if(player.y > canvas.height){
-    over = true;
-  }
+  if(player.y > canvas.height) over = true;
 
   score += dt * 60;
-  ctx.fillStyle = "black";
   ctx.fillText("Score: " + Math.floor(score), 10, 25);
 
   requestAnimationFrame(update);
@@ -216,44 +211,38 @@ function update(t){
 
 // TAP
 function tap(){
-  if(!started){
-    started = true;
-    return;
-  }
-
-  if(over){
-    reset();
-    return;
-  }
-
+  if(!started){ started = true; return; }
+  if(over){ reset(); return; }
   player.v = JUMP;
 }
 
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
-}, {passive:false});
+},{passive:false});
 
 canvas.addEventListener("click", tap);
 
 // ===== DONATION SYSTEM =====
-const popup = document.getElementById("donatePopup");
-const donateBtn = document.getElementById("donateBtn");
+const popup = document.getElementById("popup");
+document.getElementById("donateBtn").onclick = ()=> popup.style.display="flex";
 
-donateBtn.onclick = () => popup.style.display = "flex";
+function closePopup(){ popup.style.display="none"; }
 
-function closePopup(){
-  popup.style.display = "none";
-}
-
-// 🔥 PAYPAL (opens app if installed)
+// 🔥 PAYPAL (EDIT THIS)
 function openPayPal(){
   window.location.href = "https://www.paypal.me/YOURUSERNAME";
 }
 
-// 🔥 MAYA (uses your number)
-function openMaya(){
-  window.location.href = "tel:+639289652830";
+// 📋 COPY NUMBER
+function copyNumber(){
+  navigator.clipboard.writeText("09289652830");
+  alert("Copied! Paste in Maya 👍");
+}
+
+// 📱 MAYA GUIDE
+function openMayaGuide(){
+  alert("Open Maya app → Send Money → Enter:\n\n09289652830\nMorris Zoleta");
 }
 
 // START
@@ -261,4 +250,4 @@ requestAnimationFrame(update);
 </script>
 
 </body>
-</html> 
+</html>
