@@ -42,8 +42,10 @@ canvas {
 /* POPUP */
 #popup {
   position: fixed;
-  top:0;left:0;
-  width:100%;height:100%;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
   background: rgba(0,0,0,0.7);
   display:none;
   justify-content:center;
@@ -112,8 +114,10 @@ canvas {
 
     <h3>Send via Maya</h3>
 
-    <!-- 🔥 IMPORTANT: make sure maya-qr.jpg exists in your repo -->
-    <img src=maya-qr.jpg  class="qr">
+    <!-- ✅ FIXED IMAGE (use RAW link if needed) -->
+    <img src="maya-qr.jpg" class="qr">
+
+    <p>Scan with Maya to send instantly 💚</p>
 
     <div class="number">09289652830</div>
 
@@ -127,7 +131,7 @@ canvas {
 </div>
 
 <script>
-// ===== ERROR HANDLER (prevents freeze) =====
+// ===== ERROR HANDLER =====
 window.onerror = function(msg){
   alert("Error: " + msg);
 };
@@ -246,7 +250,7 @@ function closePopup(){
   popup.style.display="none";
 }
 
-// ✅ PayPal (WORKING)
+// ✅ PayPal
 function openPayPal(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
@@ -262,7 +266,7 @@ function openMayaGuide(){
   alert("Open Maya → Send Money → Enter:\n\n09289652830\nMorris Zoleta");
 }
 
-// START
+// START GAME
 requestAnimationFrame(update);
 </script>
 
