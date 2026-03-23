@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -36,7 +36,6 @@ canvas {
   background: linear-gradient(45deg,#ff416c,#ff4b2b);
   color: white;
   z-index: 9999;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 /* POPUP */
@@ -50,7 +49,6 @@ canvas {
   display:none;
   justify-content:center;
   align-items:center;
-  z-index:10000;
 }
 
 .box {
@@ -75,18 +73,21 @@ canvas {
 }
 
 .paypal { background:#0070ba; }
-.maya { background:#00c853; }
 .copyName { background:#444; }
 .copyNumber { background:#222; }
+.maya { background:#00c853; }
 .close { background:#ccc; color:black; }
 
-/* INFO BOX */
-.info {
-  background:#f5f5f5;
-  padding:12px;
-  border-radius:10px;
-  margin:10px 0;
-  font-size:15px;
+/* INFO */
+.label {
+  font-size:13px;
+  color:#777;
+}
+
+.value {
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:6px;
 }
 </style>
 </head>
@@ -109,37 +110,28 @@ canvas {
 
     <h3>Send via Maya</h3>
 
-    <div class="info">
-      <div><b>Name:</b> Morris Zoleta</div>
-      <div><b>Number:</b> 09289652830</div>
-    </div>
-
-    <!-- ✅ SEPARATE COPY BUTTONS -->
+    <!-- NAME SECTION -->
+    <div class="label">Name</div>
+    <div class="value">Morris Zoleta</div>
     <button class="btn copyName" onclick="copyName()">Copy Name</button>
+
+    <!-- NUMBER SECTION -->
+    <div class="label">Number</div>
+    <div class="value">09289652830</div>
     <button class="btn copyNumber" onclick="copyNumber()">Copy Number</button>
 
     <button class="btn maya" onclick="openMayaGuide()">How to Send</button>
-
     <button class="btn close" onclick="closePopup()">Close</button>
 
   </div>
 </div>
 
 <script>
-// ===== ERROR HANDLER =====
-window.onerror = function(msg){
-  alert("Error: " + msg);
-};
-
-// ===== GAME =====
+// GAME (same)
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const GRAVITY = 800;
-const JUMP = -250;
-const DRAG = 0.95;
-const SPEED = 130;
-
+const GRAVITY = 800, JUMP = -250, DRAG = 0.95, SPEED = 130;
 let player, obstacles, score, started, over;
 
 function reset(){
@@ -153,10 +145,8 @@ reset();
 
 setInterval(()=>{
   if(!started || over) return;
-
   let gap = 160;
   let top = Math.random()*180 + 60;
-
   obstacles.push({
     x: canvas.width,
     w: 45,
@@ -166,7 +156,6 @@ setInterval(()=>{
 }, 1400);
 
 let last = 0;
-
 function update(t){
   let dt = (t - last)/1000;
   last = t;
@@ -174,7 +163,6 @@ function update(t){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(!started){
-    ctx.font = "20px Arial";
     ctx.fillText("TAP TO START",110,260);
     requestAnimationFrame(update);
     return;
@@ -191,15 +179,11 @@ function update(t){
   player.v *= DRAG;
   player.y += player.v * dt;
 
-  if(player.y < 0) player.y = 0;
-
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, 16, 22);
 
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
-
-    ctx.fillStyle = "#8B4513";
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
@@ -212,7 +196,6 @@ function update(t){
   if(player.y > canvas.height) over = true;
 
   score += dt * 60;
-  ctx.fillStyle = "black";
   ctx.fillText("Score: " + Math.floor(score), 10, 25);
 
   requestAnimationFrame(update);
@@ -225,44 +208,38 @@ function tap(){
   player.v = JUMP;
 }
 
+canvas.addEventListener("click", tap);
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
 },{passive:false});
 
-canvas.addEventListener("click", tap);
-
-// ===== DONATION SYSTEM =====
+// POPUP
 const popup = document.getElementById("popup");
 document.getElementById("donateBtn").onclick = ()=> popup.style.display="flex";
+function closePopup(){ popup.style.display="none"; }
 
-function closePopup(){
-  popup.style.display="none";
-}
-
-// PayPal
+// PAYPAL
 function openPayPal(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
 
-// COPY NAME
+// COPY FUNCTIONS
 function copyName(){
   navigator.clipboard.writeText("Morris Zoleta");
   alert("Name copied 👍");
 }
 
-// COPY NUMBER
 function copyNumber(){
   navigator.clipboard.writeText("09289652830");
   alert("Number copied 👍");
 }
 
-// Maya guide
+// GUIDE
 function openMayaGuide(){
   alert("Open Maya → Send Money → Paste details → Send 💚");
 }
 
-// START
 requestAnimationFrame(update);
 </script>
 
