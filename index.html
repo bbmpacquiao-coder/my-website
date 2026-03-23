@@ -65,10 +65,10 @@ const ctx = canvas.getContext("2d");
 const donateBtn = document.getElementById("donateBtn");
 
 // ===== EASY PHYSICS =====
-GRAVITY = 650
-JUMP = -220
-DRAG = 0.94
-const SPEED = 90;
+const GRAVITY = 650;   // faster fall
+const JUMP = -220;     // stronger tap
+const DRAG = 0.94;     // less floaty
+const SPEED = 110;     // slightly faster obstacles;
 
 let player, obstacles, score, started, over;
 
