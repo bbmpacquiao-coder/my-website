@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Gold Game</title>
+<title>Gold Game</title>
 
 <style>
 html,body{
@@ -32,12 +32,12 @@ canvas{
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// GAME SETTINGS
+// SETTINGS
 const GRAVITY = 0.5;
 const JUMP = -8;
 const SPEED = 2;
 
-// GAME STATE
+// STATE
 let player, obstacles, gold, started, over, time;
 
 // RESET
@@ -51,7 +51,7 @@ function reset(){
 }
 reset();
 
-// SPAWN OBSTACLES
+// SPAWN
 setInterval(()=>{
   if(!started || over) return;
 
@@ -74,21 +74,19 @@ function formatTime(sec){
   return m + ":" + (s<10 ? "0"+s : s);
 }
 
-// GAME LOOP
+// LOOP
 function update(){
   ctx.clearRect(0,0,360,520);
 
   ctx.font = "18px Arial";
   ctx.fillStyle = "black";
 
-  // START SCREEN
   if(!started){
     ctx.fillText("Tap to Start",110,260);
     requestAnimationFrame(update);
     return;
   }
 
-  // GAME OVER
   if(over){
     ctx.fillText("Game Over",120,240);
     ctx.fillText("Tap to Restart",95,270);
@@ -97,7 +95,7 @@ function update(){
     return;
   }
 
-  // TIMER
+  // TIME
   time += 1/60;
 
   // PLAYER
@@ -121,14 +119,13 @@ function update(){
         over = true;
     }
 
-    // GOLD EARN
+    // GOLD
     if(!o.passed && o.x+o.w < player.x){
       o.passed = true;
       gold++;
     }
   });
 
-  // FALL
   if(player.y > 520){
     over = true;
   }
@@ -140,7 +137,7 @@ function update(){
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL
+// TAP
 function tap(){
   if(!started){
     started = true;
@@ -161,7 +158,7 @@ canvas.addEventListener("touchstart", e=>{
   tap();
 },{passive:false});
 
-// START LOOP
+// START
 update();
 </script>
 
