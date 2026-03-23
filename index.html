@@ -79,19 +79,13 @@ canvas {
 .copy { background:#333; }
 .close { background:#ccc; color:black; }
 
-/* QR */
-.qr {
-  width:160px;
-  margin:10px auto;
-  border-radius:10px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.3);
-}
-
 /* TEXT */
-.number {
-  font-weight:bold;
+.info {
+  background:#f5f5f5;
+  padding:12px;
+  border-radius:10px;
   margin:10px 0;
-  font-size:18px;
+  font-size:15px;
 }
 </style>
 </head>
@@ -114,14 +108,13 @@ canvas {
 
     <h3>Send via Maya</h3>
 
-    <!-- ✅ FIXED IMAGE (use RAW link if needed) -->
-    <img src="maya-qr.jpg" class="qr">
+    <!-- CLEAN INFO BOX -->
+    <div class="info">
+      <div><b>Name:</b> Morris Zoleta</div>
+      <div><b>Number:</b> 09289652830</div>
+    </div>
 
-    <p>Scan with Maya to send instantly 💚</p>
-
-    <div class="number">09289652830</div>
-
-    <button class="btn copy" onclick="copyNumber()">Copy Number</button>
+    <button class="btn copy" onclick="copyAll()">Copy Name & Number</button>
 
     <button class="btn maya" onclick="openMayaGuide()">How to Send</button>
 
@@ -156,7 +149,6 @@ function reset(){
 }
 reset();
 
-// SPAWN
 setInterval(()=>{
   if(!started || over) return;
 
@@ -171,7 +163,6 @@ setInterval(()=>{
   });
 }, 1400);
 
-// LOOP
 let last = 0;
 
 function update(t){
@@ -194,18 +185,15 @@ function update(t){
     return;
   }
 
-  // physics
   player.v += GRAVITY * dt;
   player.v *= DRAG;
   player.y += player.v * dt;
 
   if(player.y < 0) player.y = 0;
 
-  // player
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, 16, 22);
 
-  // obstacles
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
 
@@ -250,23 +238,24 @@ function closePopup(){
   popup.style.display="none";
 }
 
-// ✅ PayPal
+// PayPal
 function openPayPal(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
 
-// ✅ Copy number
-function copyNumber(){
-  navigator.clipboard.writeText("09289652830");
-  alert("Copied! Paste in Maya 👍");
+// COPY BOTH
+function copyAll(){
+  const text = "Morris Zoleta - 09289652830";
+  navigator.clipboard.writeText(text);
+  alert("Copied Name & Number 👍");
 }
 
-// ✅ Maya guide
+// Maya guide
 function openMayaGuide(){
-  alert("Open Maya → Send Money → Enter:\n\n09289652830\nMorris Zoleta");
+  alert("Open Maya → Send Money → Paste details → Send 💚");
 }
 
-// START GAME
+// START
 requestAnimationFrame(update);
 </script>
 
