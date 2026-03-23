@@ -76,10 +76,11 @@ canvas {
 
 .paypal { background:#0070ba; }
 .maya { background:#00c853; }
-.copy { background:#333; }
+.copyName { background:#444; }
+.copyNumber { background:#222; }
 .close { background:#ccc; color:black; }
 
-/* TEXT */
+/* INFO BOX */
 .info {
   background:#f5f5f5;
   padding:12px;
@@ -108,13 +109,14 @@ canvas {
 
     <h3>Send via Maya</h3>
 
-    <!-- CLEAN INFO BOX -->
     <div class="info">
       <div><b>Name:</b> Morris Zoleta</div>
       <div><b>Number:</b> 09289652830</div>
     </div>
 
-    <button class="btn copy" onclick="copyAll()">Copy Name & Number</button>
+    <!-- ✅ SEPARATE COPY BUTTONS -->
+    <button class="btn copyName" onclick="copyName()">Copy Name</button>
+    <button class="btn copyNumber" onclick="copyNumber()">Copy Number</button>
 
     <button class="btn maya" onclick="openMayaGuide()">How to Send</button>
 
@@ -243,11 +245,16 @@ function openPayPal(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
 
-// COPY BOTH
-function copyAll(){
-  const text = "Morris Zoleta - 09289652830";
-  navigator.clipboard.writeText(text);
-  alert("Copied Name & Number 👍");
+// COPY NAME
+function copyName(){
+  navigator.clipboard.writeText("Morris Zoleta");
+  alert("Name copied 👍");
+}
+
+// COPY NUMBER
+function copyNumber(){
+  navigator.clipboard.writeText("09289652830");
+  alert("Number copied 👍");
 }
 
 // Maya guide
