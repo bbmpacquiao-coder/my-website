@@ -21,9 +21,11 @@ canvas{
   border-radius:20px;
   width:92vw;
   max-width:360px;
+  position:relative;
+  z-index:1; /* 🔥 lower than button */
 }
 
-/* DONATE BUTTON */
+/* DONATE BUTTON (FIXED) */
 #donateBtn{
   position:fixed;
   bottom:70px;
@@ -35,6 +37,7 @@ canvas{
   background:#ff4b2b;
   color:white;
   font-weight:bold;
+  z-index:9999; /* 🔥 always on top */
   box-shadow:0 6px 20px rgba(0,0,0,0.3);
 }
 
@@ -47,6 +50,7 @@ canvas{
   display:none;
   justify-content:center;
   align-items:center;
+  z-index:10000; /* 🔥 above everything */
 }
 
 .box{
@@ -208,39 +212,44 @@ function update(t){
 
 // TAP
 function tap(){
-  if(!started){
-    started = true;
-    return;
-  }
-
-  if(over){
-    reset();
-    return;
-  }
-
+  if(!started){ started = true; return; }
+  if(over){ reset(); return; }
   player.v = JUMP;
 }
 
-canvas.addEventListener("click", tap);
+// 🔥 FIX: prevent canvas stealing touch
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
 },{passive:false});
 
-// ===== DONATION SYSTEM =====
+canvas.addEventListener("click", tap);
+
+// ===== DONATION SYSTEM (FULL FIX) =====
 const popup = document.getElementById("popup");
 const donateBtn = document.getElementById("donateBtn");
 
-donateBtn.onclick = ()=> popup.style.display = "flex";
+// 🔥 WORKS ON ALL DEVICES
+donateBtn.addEventListener("click", ()=>{
+  popup.style.display = "flex";
+});
 
+donateBtn.addEventListener("touchstart", (e)=>{
+  e.stopPropagation();
+  popup.style.display = "flex";
+});
+
+// CLOSE
 function closePopup(){
   popup.style.display = "none";
 }
 
+// PAYPAL
 function donateClick(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
 
+// COPY
 function copyName(){
   navigator.clipboard.writeText("Morris Zoleta");
   alert("Name copied 👍");
@@ -251,7 +260,7 @@ function copyNumber(){
   alert("Number copied 👍");
 }
 
-// CLOSE ON OUTSIDE CLICK
+// CLOSE OUTSIDE
 popup.addEventListener("click", e=>{
   if(e.target === popup) closePopup();
 });
