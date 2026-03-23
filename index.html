@@ -82,6 +82,7 @@ canvas {
   width:160px;
   margin:10px auto;
   border-radius:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
 
 /* TEXT */
@@ -105,19 +106,20 @@ canvas {
     <h2>Support Me ❤️</h2>
     <p>Even ₱10 helps 🙏</p>
 
-    <button class="btn paypal" onclick="openPayPal()">PayPal</button>
+    <button class="btn paypal" onclick="openPayPal()">Pay via PayPal</button>
 
     <hr>
 
     <h3>Send via Maya</h3>
 
-    <!-- 🔥 REPLACE WITH YOUR QR IMAGE -->
-    <img src= maya-qr.jpg
+    <!-- 🔥 IMPORTANT: make sure maya-qr.jpg exists in your repo -->
+    <img src="maya-qr.jpg" class="qr">
+
     <div class="number">09289652830</div>
 
     <button class="btn copy" onclick="copyNumber()">Copy Number</button>
 
-    <button class="btn maya" onclick="openMayaGuide()">Open Maya Guide</button>
+    <button class="btn maya" onclick="openMayaGuide()">How to Send</button>
 
     <button class="btn close" onclick="closePopup()">Close</button>
 
@@ -125,6 +127,11 @@ canvas {
 </div>
 
 <script>
+// ===== ERROR HANDLER (prevents freeze) =====
+window.onerror = function(msg){
+  alert("Error: " + msg);
+};
+
 // ===== GAME =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -145,6 +152,7 @@ function reset(){
 }
 reset();
 
+// SPAWN
 setInterval(()=>{
   if(!started || over) return;
 
@@ -159,6 +167,7 @@ setInterval(()=>{
   });
 }, 1400);
 
+// LOOP
 let last = 0;
 
 function update(t){
@@ -168,6 +177,7 @@ function update(t){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(!started){
+    ctx.font = "20px Arial";
     ctx.fillText("TAP TO START",110,260);
     requestAnimationFrame(update);
     return;
@@ -180,13 +190,18 @@ function update(t){
     return;
   }
 
+  // physics
   player.v += GRAVITY * dt;
   player.v *= DRAG;
   player.y += player.v * dt;
 
+  if(player.y < 0) player.y = 0;
+
+  // player
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, 16, 22);
 
+  // obstacles
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
 
@@ -203,6 +218,7 @@ function update(t){
   if(player.y > canvas.height) over = true;
 
   score += dt * 60;
+  ctx.fillStyle = "black";
   ctx.fillText("Score: " + Math.floor(score), 10, 25);
 
   requestAnimationFrame(update);
@@ -226,22 +242,24 @@ canvas.addEventListener("click", tap);
 const popup = document.getElementById("popup");
 document.getElementById("donateBtn").onclick = ()=> popup.style.display="flex";
 
-function closePopup(){ popup.style.display="none"; }
-
-// 🔥 PAYPAL (EDIT THIS)
-function openPayPal(){
-  window.location.href = https://www.paypal.me/MorrisZoleta982;
+function closePopup(){
+  popup.style.display="none";
 }
 
-// 📋 COPY NUMBER
+// ✅ PayPal (WORKING)
+function openPayPal(){
+  window.location.href = "https://www.paypal.me/MorrisZoleta982";
+}
+
+// ✅ Copy number
 function copyNumber(){
   navigator.clipboard.writeText("09289652830");
   alert("Copied! Paste in Maya 👍");
 }
 
-// 📱 MAYA GUIDE
+// ✅ Maya guide
 function openMayaGuide(){
-  alert("Open Maya app → Send Money → Enter:\n\n09289652830\nMorris Zoleta");
+  alert("Open Maya → Send Money → Enter:\n\n09289652830\nMorris Zoleta");
 }
 
 // START
