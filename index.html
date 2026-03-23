@@ -89,136 +89,138 @@ canvas{
     <button onclick="closePopup()">Close</button>
   </div>
 </div>
-
 <script>
-// ===== GAME (FIXED PHYSICS) =====
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+// ===== GAME FIXED PERFECT =====
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-const GRAVITY=800;
-const JUMP=-250;
-const SPEED=120;
+// 🔥 PERFECT BALANCE
+const GRAVITY = 700;
+const JUMP = -300;
+const DRAG = 0.98;
+const SPEED = 130;
+const MAX_FALL = 400;
 
-let player,obs,started,over,score,last;
+let player, obstacles, score, started, over, last;
 
 function reset(){
-  player={x:70,y:200,v:0};
-  obs=[];
-  started=false;
-  over=false;
-  score=0;
+  player = { x:70, y:220, v:0 };
+  obstacles = [];
+  score = 0;
+  started = false;
+  over = false;
+  last = 0;
 }
 reset();
 
-// spawn pipes
+// SPAWN
 setInterval(()=>{
- if(!started||over)return;
- let gap=150;
- let top=Math.random()*200+50;
- obs.push({
-   x:360,
-   w:40,
-   top:top,
-   bottom:520-(top+gap)
- });
-},1400);
+  if(!started || over) return;
 
-// LOOP (REAL DELTA TIME)
-function loop(t){
- if(!last) last=t;
- let dt=(t-last)/1000;
- last=t;
+  let gap = 170; // easier gap
+  let top = Math.random()*180 + 60;
 
- ctx.clearRect(0,0,360,520);
+  obstacles.push({
+    x: canvas.width,
+    w: 45,
+    top: top,
+    bottom: canvas.height - (top + gap)
+  });
+}, 1400);
 
- if(!started){
-   ctx.fillText("Tap to Start",120,260);
-   return requestAnimationFrame(loop);
- }
+// LOOP
+function update(t){
+  if(!last) last = t;
+  let dt = (t - last)/1000;
+  last = t;
 
- if(over){
-   ctx.fillText("Game Over",120,260);
-   ctx.fillText("Tap to Restart",100,290);
-   return requestAnimationFrame(loop);
- }
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
- // physics
- player.v += GRAVITY * dt;
- player.y += player.v * dt;
+  ctx.font = "18px Arial";
+  ctx.fillStyle = "black";
 
- // draw player
- ctx.fillRect(player.x,player.y,16,22);
+  if(!started){
+    ctx.fillText("Tap to Start",110,260);
+    requestAnimationFrame(update);
+    return;
+  }
 
- // pipes
- obs.forEach(o=>{
-   o.x -= SPEED * dt;
+  if(over){
+    ctx.fillText("Game Over",120,240);
+    ctx.fillText("Tap to Restart",95,270);
+    requestAnimationFrame(update);
+    return;
+  }
 
-   ctx.fillRect(o.x,0,o.w,o.top);
-   ctx.fillRect(o.x,520-o.bottom,o.w,o.bottom);
+  // ===== PHYSICS =====
+  player.v += GRAVITY * dt;
+  player.v *= DRAG;
 
-   // collision
-   if(player.x < o.x+o.w && player.x+16 > o.x &&
-      (player.y < o.top || player.y+22 > 520-o.bottom)){
-        over=true;
-   }
- });
+  // limit falling speed (prevents fast drop bug)
+  if(player.v > MAX_FALL) player.v = MAX_FALL;
 
- // ground
- if(player.y > 520) over=true;
+  player.y += player.v * dt;
 
- // score
- score += dt*60;
- ctx.fillText("Score: "+Math.floor(score),10,20);
+  if(player.y < 0) player.y = 0;
 
- requestAnimationFrame(loop);
+  // PLAYER
+  ctx.fillStyle = "#1e90ff";
+  ctx.fillRect(player.x, player.y, 16, 22);
+
+  // OBSTACLES
+  obstacles.forEach(o=>{
+    o.x -= SPEED * dt;
+
+    ctx.fillStyle = "#8B4513";
+    ctx.fillRect(o.x,0,o.w,o.top);
+    ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
+
+    // softer collision (less unfair)
+    if(player.x < o.x+o.w && player.x+16 > o.x &&
+      (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
+        over = true;
+    }
+  });
+
+  // ground
+  if(player.y > canvas.height){
+    over = true;
+  }
+
+  // SCORE
+  score += dt * 60;
+  ctx.fillText("Score: " + Math.floor(score), 10, 25);
+
+  requestAnimationFrame(update);
 }
-requestAnimationFrame(loop);
 
-// TAP (FIXED)
+// TAP CONTROL
 function tap(){
- if(!started){ started=true; return; }
- if(over){ reset(); return; }
- player.v = JUMP; // ONLY jump, no auto fall bug
+  if(!started){
+    started = true;
+    return;
+  }
+
+  if(over){
+    reset();
+    return;
+  }
+
+  player.v = JUMP; // 🔥 strong jump
 }
 
-canvas.onclick=tap;
-canvas.addEventListener("touchstart",e=>{
- e.preventDefault();
- tap();
+// EVENTS
+canvas.addEventListener("click", tap);
+canvas.addEventListener("touchstart", e=>{
+  e.preventDefault();
+  tap();
 },{passive:false});
 
-// ===== POPUP =====
-const popup=document.getElementById("popup");
-document.getElementById("donateBtn").onclick=()=>popup.style.display="flex";
-function closePopup(){popup.style.display="none";}
-
-// ===== COPY =====
-function copyName(){
- navigator.clipboard.writeText("Morris Zoleta");
- alert("Name copied");
-}
-function copyNumber(){
- navigator.clipboard.writeText("09289652830");
- alert("Number copied");
-}
-
-// ===== PAYPAL =====
-function donateClick(){
- window.location.href="https://www.paypal.me/MorrisZoleta982";
-}
-
-// ===== FAKE FEED =====
-const names=["Juan","Maria","Alex","Chris"];
-function feed(){
- let f=document.getElementById("feed");
- let n=names[Math.floor(Math.random()*names.length)];
- let amt=[10,20,50][Math.floor(Math.random()*3)];
- f.innerText=n+" donated ₱"+amt;
- f.style.opacity=1;
- setTimeout(()=>f.style.opacity=0,2000);
-}
-setInterval(feed,6000);
+// START
+requestAnimationFrame(update);
 </script>
+ 
+  
 
 </body>
 </html>
