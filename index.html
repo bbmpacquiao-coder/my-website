@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -40,20 +40,94 @@ canvas {
   z-index: 9999;
   box-shadow: 0 5px 12px rgba(0,0,0,0.3);
 }
+
+/* POPUP */
+#donatePopup {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:10000;
+}
+
+.popupBox {
+  background:white;
+  padding:20px;
+  border-radius:18px;
+  width:85%;
+  max-width:320px;
+  text-align:center;
+}
+
+.popupBox h2 {
+  margin-top:0;
+}
+
+.payBtn {
+  display:block;
+  margin:10px 0;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  font-size:16px;
+  width:100%;
+  color:white;
+}
+
+/* PayPal */
+.paypal {
+  background:#0070ba;
+}
+
+/* Maya */
+.maya {
+  background:#00c853;
+}
+
+/* Close */
+.closeBtn {
+  margin-top:10px;
+  background:#ccc;
+  color:black;
+}
 </style>
 </head>
 
 <body>
 
 <canvas id="game" width="360" height="520"></canvas>
+
 <button id="donateBtn">💰 Support Me</button>
+
+<!-- POPUP -->
+<div id="donatePopup">
+  <div class="popupBox">
+    <h2>Support Me ❤️</h2>
+
+    <button class="payBtn paypal" onclick="openPayPal()">
+      Pay via PayPal
+    </button>
+
+    <button class="payBtn maya" onclick="openMaya()">
+      Send via Maya
+    </button>
+
+    <button class="payBtn closeBtn" onclick="closePopup()">
+      Close
+    </button>
+  </div>
+</div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const donateBtn = document.getElementById("donateBtn");
 
-// ===== BALANCED PHYSICS (MEDIUM FAST) =====
+// ===== GAME =====
 const GRAVITY = 800;
 const JUMP = -250;
 const DRAG = 0.95;
@@ -61,7 +135,6 @@ const SPEED = 130;
 
 let player, obstacles, score, started, over;
 
-// RESET
 function reset(){
   player = { x:70, y:220, v:0 };
   obstacles = [];
@@ -71,7 +144,6 @@ function reset(){
 }
 reset();
 
-// SPAWN OBSTACLES (faster)
 setInterval(()=>{
   if(!started || over) return;
 
@@ -86,7 +158,6 @@ setInterval(()=>{
   });
 }, 1400);
 
-// LOOP
 let last = 0;
 
 function update(t){
@@ -95,7 +166,6 @@ function update(t){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // START SCREEN
   if(!started){
     ctx.font = "20px Arial";
     ctx.fillText("TAP TO START",110,260);
@@ -103,7 +173,6 @@ function update(t){
     return;
   }
 
-  // GAME OVER
   if(over){
     ctx.font = "20px Arial";
     ctx.fillText("GAME OVER",120,240);
@@ -112,18 +181,15 @@ function update(t){
     return;
   }
 
-  // PHYSICS
   player.v += GRAVITY * dt;
   player.v *= DRAG;
   player.y += player.v * dt;
 
   if(player.y < 0) player.y = 0;
 
-  // PLAYER
   ctx.fillStyle = "blue";
   ctx.fillRect(player.x, player.y, 16, 22);
 
-  // OBSTACLES
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
 
@@ -131,14 +197,12 @@ function update(t){
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
-    // COLLISION
     if(player.x < o.x+o.w && player.x+16 > o.x &&
       (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
         over = true;
     }
   });
 
-  // GROUND
   if(player.y > canvas.height){
     over = true;
   }
@@ -150,7 +214,7 @@ function update(t){
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL (ANDROID PERFECT)
+// TAP
 function tap(){
   if(!started){
     started = true;
@@ -165,7 +229,6 @@ function tap(){
   player.v = JUMP;
 }
 
-// TOUCH EVENTS
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
@@ -173,21 +236,29 @@ canvas.addEventListener("touchstart", e=>{
 
 canvas.addEventListener("click", tap);
 
-// DONATION LINK (ANDROID SAFE)
-function openDonate(){
-  window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
+// ===== DONATION SYSTEM =====
+const popup = document.getElementById("donatePopup");
+const donateBtn = document.getElementById("donateBtn");
+
+donateBtn.onclick = () => popup.style.display = "flex";
+
+function closePopup(){
+  popup.style.display = "none";
 }
 
-donateBtn.addEventListener("touchstart", e=>{
-  e.preventDefault();
-  openDonate();
-});
+// 🔥 PAYPAL (opens app if installed)
+function openPayPal(){
+  window.location.href = "https://www.paypal.me/YOURUSERNAME";
+}
 
-donateBtn.addEventListener("click", openDonate);
+// 🔥 MAYA (uses your number)
+function openMaya(){
+  window.location.href = "tel:+639289652830";
+}
 
 // START
 requestAnimationFrame(update);
 </script>
 
 </body>
-</html>
+</html> 
