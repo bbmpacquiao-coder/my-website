@@ -3,60 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Easy Tap Game</title>
+<title>Ultimate Tap Game</title>
 
 <style>
 html, body {
- padding-bottom: 100px; 
- margin: 0;
+  margin: 0;
   overflow: hidden;
   background: linear-gradient(#5c94fc, #cce6ff);
   font-family: Arial;
   text-align: center;
 }
 
+/* GAME */
 canvas {
   display: block;
   margin: 10px auto;
   background: #87ceeb;
-  border-radius: 10px;
-  width: 90vw;
-  max-width: 350px;
+  border-radius: 12px;
+  width: 92vw;
+  max-width: 360px;
   touch-action: none;
 }
 
 /* DONATE BUTTON */
- #donateBtn {
+#donateBtn {
   position: fixed;
-  bottom: 70px; /* 🔥 move higher (important) */
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 14px 20px;
+  padding: 14px 22px;
   font-size: 16px;
+  border-radius: 14px;
   border: none;
-  border-radius: 12px;
   background: #ff4b2b;
   color: white;
-  z-index: 9999; /* 🔥 always on top */
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 14px 20px;
-  font-size: 16px;
-  border: none;
-  border-radius: 12px;
-  background: #ff4b2b;
-  color: white;
-  z-index: 10;
+  z-index: 9999;
+  box-shadow: 0 5px 12px rgba(0,0,0,0.3);
 }
 </style>
 </head>
 
 <body>
 
-<canvas id="game" width="350" height="500"></canvas>
-
+<canvas id="game" width="360" height="520"></canvas>
 <button id="donateBtn">💰 Support Me</button>
 
 <script>
@@ -64,17 +53,17 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const donateBtn = document.getElementById("donateBtn");
 
-// ===== EASY PHYSICS =====
-const GRAVITY = 650;   // faster fall
-const JUMP = -220;     // stronger tap
-const DRAG = 0.94;     // less floaty
-const SPEED = 110;     // slightly faster obstacles;
+// ===== BALANCED PHYSICS (MEDIUM FAST) =====
+const GRAVITY = 800;
+const JUMP = -250;
+const DRAG = 0.95;
+const SPEED = 130;
 
 let player, obstacles, score, started, over;
 
 // RESET
 function reset(){
-  player = { x:60, y:200, v:0 };
+  player = { x:70, y:220, v:0 };
   obstacles = [];
   score = 0;
   started = false;
@@ -82,20 +71,20 @@ function reset(){
 }
 reset();
 
-// SPAWN
+// SPAWN OBSTACLES (faster)
 setInterval(()=>{
   if(!started || over) return;
 
-  let gap = 170;
+  let gap = 160;
   let top = Math.random()*180 + 60;
 
   obstacles.push({
     x: canvas.width,
-    w: 40,
+    w: 45,
     top: top,
     bottom: canvas.height - (top + gap)
   });
-}, 1800);
+}, 1400);
 
 // LOOP
 let last = 0;
@@ -106,15 +95,19 @@ function update(t){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // START SCREEN
   if(!started){
-    ctx.fillText("TAP TO START",110,250);
+    ctx.font = "20px Arial";
+    ctx.fillText("TAP TO START",110,260);
     requestAnimationFrame(update);
     return;
   }
 
+  // GAME OVER
   if(over){
-    ctx.fillText("GAME OVER",120,230);
-    ctx.fillText("Tap to Restart",100,260);
+    ctx.font = "20px Arial";
+    ctx.fillText("GAME OVER",120,240);
+    ctx.fillText("Tap to Restart",100,270);
     requestAnimationFrame(update);
     return;
   }
@@ -128,33 +121,36 @@ function update(t){
 
   // PLAYER
   ctx.fillStyle = "blue";
-  ctx.fillRect(player.x, player.y, 15, 20);
+  ctx.fillRect(player.x, player.y, 16, 22);
 
   // OBSTACLES
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
 
-    ctx.fillStyle = "brown";
+    ctx.fillStyle = "#8B4513";
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
-    if(player.x < o.x+o.w && player.x+15 > o.x &&
-      (player.y < o.top-5 || player.y+20 > canvas.height-o.bottom+5)){
+    // COLLISION
+    if(player.x < o.x+o.w && player.x+16 > o.x &&
+      (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
         over = true;
     }
   });
 
+  // GROUND
   if(player.y > canvas.height){
     over = true;
   }
 
   score += dt * 60;
-  ctx.fillText("Score: " + Math.floor(score), 10, 20);
+  ctx.fillStyle = "black";
+  ctx.fillText("Score: " + Math.floor(score), 10, 25);
 
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL
+// TAP CONTROL (ANDROID PERFECT)
 function tap(){
   if(!started){
     started = true;
@@ -169,7 +165,7 @@ function tap(){
   player.v = JUMP;
 }
 
-// ANDROID TOUCH
+// TOUCH EVENTS
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
@@ -177,12 +173,12 @@ canvas.addEventListener("touchstart", e=>{
 
 canvas.addEventListener("click", tap);
 
-// DONATE BUTTON FIX (ANDROID SAFE)
+// DONATION LINK (ANDROID SAFE)
 function openDonate(){
   window.location.href = "https://bbmpacquiao-coder.github.io/morris-donation/";
 }
 
-donateBtn.addEventListener("touchstart", function(e){
+donateBtn.addEventListener("touchstart", e=>{
   e.preventDefault();
   openDonate();
 });
