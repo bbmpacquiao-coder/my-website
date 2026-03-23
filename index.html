@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Tap Game PRO SOUND FIXED</title>
+<title>Tap Game PRO FINAL</title>
 
 <style>
 html,body{
@@ -35,114 +35,67 @@ canvas{
   font-weight:bold;
   box-shadow:0 6px 20px rgba(0,0,0,0.3);
 }
-
-#popup{
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:rgba(0,0,0,0.6);
-  display:none;
-  justify-content:center;
-  align-items:center;
-}
-
-.box{
-  background:white;
-  padding:20px;
-  border-radius:15px;
-  width:90%;
-  max-width:320px;
-  text-align:center;
-}
-
-.btn{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border:none;
-  border-radius:10px;
-  font-size:15px;
-}
-
-.paypal{background:#0070ba;color:white;}
-.copy{background:#333;color:white;}
-.close{background:#ccc;}
-
-.info{
-  margin:10px 0;
-  font-weight:bold;
-}
 </style>
 </head>
 
 <body>
 
 <canvas id="game" width="360" height="520"></canvas>
-<button id="donateBtn">💰 Support Me</button>
-
-<div id="popup">
-  <div class="box">
-    <h3>❤️ Support Me</h3>
-
-    <button class="btn paypal" onclick="donateClick()">Pay via PayPal</button>
-
-    <p class="info">Maya</p>
-    <div class="info">Name: Morris Zoleta</div>
-    <button class="btn copy" onclick="copyName()">Copy Name</button>
-
-    <div class="info">Number: 09289652830</div>
-    <button class="btn copy" onclick="copyNumber()">Copy Number</button>
-
-    <button class="btn close" onclick="closePopup()">Close</button>
-  </div>
-</div>
+<button id="donateBtn" onclick="donate()">💰 Support Me</button>
 
 <script>
-// ================= AUDIO SYSTEM (MOBILE FIXED) =================
-let jumpSound, hitSound, bgMusic;
-let audioUnlocked = false;
+// ================= AUDIO ENGINE (SUPER RELIABLE) =================
+let audioCtx;
+let unlocked = false;
 
-function unlockAudio(){
-  if(audioUnlocked) return;
+function initAudio(){
+  if(unlocked) return;
 
-  jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3");
-  hitSound  = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3");
-  bgMusic   = new Audio("https://assets.mixkit.co/music/preview/mixkit-arcade-game-opener-222.mp3");
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  bgMusic.loop = true;
-  bgMusic.volume = 0.3;
-  jumpSound.volume = 0.6;
-  hitSound.volume = 0.7;
+  // resume context (important for mobile)
+  audioCtx.resume();
 
-  // preload
-  jumpSound.load();
-  hitSound.load();
-  bgMusic.load();
-
-  // unlock trick (play then pause)
-  bgMusic.play().then(()=>{
-    bgMusic.pause();
-    bgMusic.currentTime = 0;
-  }).catch(()=>{});
-
-  audioUnlocked = true;
+  unlocked = true;
 }
 
+// SOUND GENERATORS (no external files = no blocking)
 function playJump(){
-  if(!audioUnlocked) return;
-  jumpSound.currentTime = 0;
-  jumpSound.play().catch(()=>{});
+  if(!audioCtx) return;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "square";
+  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
 }
 
 function playHit(){
-  if(!audioUnlocked) return;
-  hitSound.currentTime = 0;
-  hitSound.play().catch(()=>{});
-}
+  if(!audioCtx) return;
 
-function playMusic(){
-  if(!audioUnlocked) return;
-  bgMusic.play().catch(()=>{});
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.5);
 }
 
 // ================= GAME =================
@@ -151,9 +104,7 @@ const ctx = canvas.getContext("2d");
 
 const GRAVITY = 700;
 const JUMP = -300;
-const DRAG = 0.98;
 const SPEED = 130;
-const MAX_FALL = 400;
 
 let player, obstacles, score, started, over, last;
 
@@ -180,15 +131,16 @@ setInterval(()=>{
     top: top,
     bottom: canvas.height - (top + gap)
   });
-}, 1400);
+},1400);
 
-// game loop
+// loop
 function update(t){
   if(!last) last = t;
   let dt = (t - last)/1000;
   last = t;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   ctx.font = "18px Arial";
   ctx.fillStyle = "black";
 
@@ -207,26 +159,21 @@ function update(t){
 
   // physics
   player.v += GRAVITY * dt;
-  player.v *= DRAG;
-  if(player.v > MAX_FALL) player.v = MAX_FALL;
-
   player.y += player.v * dt;
-  if(player.y < 0) player.y = 0;
 
-  // player
-  ctx.fillStyle = "#1e90ff";
-  ctx.fillRect(player.x, player.y, 16, 22);
+  ctx.fillStyle="#1e90ff";
+  ctx.fillRect(player.x,player.y,16,22);
 
   // obstacles
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
 
-    ctx.fillStyle = "#8B4513";
+    ctx.fillStyle="#8B4513";
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
     if(player.x < o.x+o.w && player.x+16 > o.x &&
-      (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
+      (player.y < o.top || player.y+22 > canvas.height-o.bottom)){
         triggerGameOver();
     }
   });
@@ -235,13 +182,13 @@ function update(t){
     triggerGameOver();
   }
 
-  score += dt * 60;
-  ctx.fillText("Score: " + Math.floor(score), 10, 25);
+  score += dt*60;
+  ctx.fillText("Score: "+Math.floor(score),10,25);
 
   requestAnimationFrame(update);
 }
 
-// game over with sound
+// game over
 function triggerGameOver(){
   if(!over){
     over = true;
@@ -249,13 +196,12 @@ function triggerGameOver(){
   }
 }
 
-// tap control
+// tap
 function tap(){
-  unlockAudio();
+  initAudio();
 
   if(!started){
     started = true;
-    playMusic();
     return;
   }
 
@@ -274,33 +220,10 @@ canvas.addEventListener("touchstart", e=>{
   tap();
 },{passive:false});
 
-// ================= DONATION =================
-const popup = document.getElementById("popup");
-const donateBtn = document.getElementById("donateBtn");
-
-donateBtn.onclick = ()=> popup.style.display = "flex";
-
-function closePopup(){
-  popup.style.display = "none";
-}
-
-function donateClick(){
+// donation
+function donate(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
-
-function copyName(){
-  navigator.clipboard.writeText("Morris Zoleta");
-  alert("Name copied 👍");
-}
-
-function copyNumber(){
-  navigator.clipboard.writeText("09289652830");
-  alert("Number copied 👍");
-}
-
-popup.addEventListener("click", e=>{
-  if(e.target === popup) closePopup();
-});
 
 // start loop
 requestAnimationFrame(update);
