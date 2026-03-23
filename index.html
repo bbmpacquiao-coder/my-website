@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Tap Game VIRAL</title>
+<title>Ultimate Tap Game VIRAL FIXED</title>
 
 <style>
-html, body {
+html,body{
   margin:0;
   overflow:hidden;
   font-family:Segoe UI;
@@ -14,33 +14,30 @@ html, body {
 }
 
 /* GAME */
-canvas {
+canvas{
   display:block;
   margin:10px auto;
   background:#dff6ff;
   border-radius:20px;
   width:92vw;
   max-width:360px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.3);
 }
 
 /* DONATE */
-#donateBtn {
+#donateBtn{
   position:fixed;
   bottom:70px;
   left:50%;
   transform:translateX(-50%);
-  padding:16px 28px;
+  padding:14px 24px;
   border:none;
   border-radius:30px;
-  background:linear-gradient(45deg,#ff416c,#ff4b2b);
+  background:#ff4b2b;
   color:white;
-  font-weight:bold;
-  box-shadow:0 10px 30px rgba(255,75,43,0.6);
 }
 
 /* POPUP */
-#popup {
+#popup{
   position:fixed;
   top:0;left:0;
   width:100%;height:100%;
@@ -50,66 +47,26 @@ canvas {
   align-items:center;
 }
 
-.box {
-  background:rgba(255,255,255,0.15);
-  backdrop-filter:blur(12px);
+.box{
+  background:white;
   padding:20px;
-  border-radius:20px;
+  border-radius:15px;
   width:90%;
   max-width:320px;
   text-align:center;
-  color:white;
 }
 
-/* BUTTONS */
-.btn {
-  width:100%;
-  padding:14px;
-  margin:8px 0;
-  border:none;
-  border-radius:12px;
-  color:white;
-  font-weight:bold;
-}
-
-.paypal {background:#0070ba;}
-.copy {background:#333;}
-.maya {background:#00c853;}
-.close {background:#ccc;color:black;}
-
-/* CARDS */
-.card {
-  background:rgba(255,255,255,0.2);
-  padding:10px;
-  border-radius:10px;
-  margin:8px 0;
-}
-
-/* DONATION FEED */
-#feed {
+/* FEED */
+#feed{
   position:fixed;
   top:20px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(0,0,0,0.6);
+  background:black;
   color:white;
-  padding:8px 16px;
+  padding:6px 12px;
   border-radius:20px;
-  font-size:14px;
   opacity:0;
-  transition:0.5s;
-}
-
-/* REWARD */
-#reward {
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%) scale(0);
-  background:white;
-  padding:20px;
-  border-radius:15px;
-  text-align:center;
   transition:0.3s;
 }
 </style>
@@ -124,71 +81,111 @@ canvas {
 
 <div id="popup">
   <div class="box">
-    <h2>❤️ Support Me</h2>
-
-    <button class="btn paypal" onclick="donateClick()">Pay via PayPal</button>
-
-    <h3>Maya</h3>
-
-    <div class="card">Name: Morris Zoleta</div>
-    <button class="btn copy" onclick="copyName()">Copy Name</button>
-
-    <div class="card">Number: 09289652830</div>
-    <button class="btn copy" onclick="copyNumber()">Copy Number</button>
-
-    <button class="btn close" onclick="closePopup()">Close</button>
+    <h3>Support ❤️</h3>
+    <button onclick="donateClick()">PayPal</button>
+    <p>Maya:</p>
+    <button onclick="copyName()">Copy Name</button>
+    <button onclick="copyNumber()">Copy Number</button>
+    <button onclick="closePopup()">Close</button>
   </div>
 </div>
 
-<div id="reward">
-  <h3>🎉 Thank You!</h3>
-  <p>You unlocked bonus luck 🍀</p>
-</div>
-
 <script>
-// ===== GAME =====
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+// ===== GAME (FIXED PHYSICS) =====
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-let player={x:70,y:200,v:0},obs=[],score=0,started=false,over=false;
+const GRAVITY=800;
+const JUMP=-250;
+const SPEED=120;
 
-function reset(){player.y=200;player.v=0;obs=[];score=0;started=false;over=false;}
+let player,obs,started,over,score,last;
 
+function reset(){
+  player={x:70,y:200,v:0};
+  obs=[];
+  started=false;
+  over=false;
+  score=0;
+}
+reset();
+
+// spawn pipes
 setInterval(()=>{
  if(!started||over)return;
- let gap=150,top=Math.random()*200+50;
- obs.push({x:360,w:40,top:top,bottom:520-(top+gap)});
+ let gap=150;
+ let top=Math.random()*200+50;
+ obs.push({
+   x:360,
+   w:40,
+   top:top,
+   bottom:520-(top+gap)
+ });
 },1400);
 
-function loop(){
+// LOOP (REAL DELTA TIME)
+function loop(t){
+ if(!last) last=t;
+ let dt=(t-last)/1000;
+ last=t;
+
  ctx.clearRect(0,0,360,520);
 
- if(!started){ctx.fillText("Tap to Start",120,260);return requestAnimationFrame(loop);}
- if(over){ctx.fillText("Game Over",120,260);return requestAnimationFrame(loop);}
+ if(!started){
+   ctx.fillText("Tap to Start",120,260);
+   return requestAnimationFrame(loop);
+ }
 
- player.v+=800*0.016;
- player.y+=player.v*0.016;
+ if(over){
+   ctx.fillText("Game Over",120,260);
+   ctx.fillText("Tap to Restart",100,290);
+   return requestAnimationFrame(loop);
+ }
 
+ // physics
+ player.v += GRAVITY * dt;
+ player.y += player.v * dt;
+
+ // draw player
  ctx.fillRect(player.x,player.y,16,22);
 
+ // pipes
  obs.forEach(o=>{
-   o.x-=2;
+   o.x -= SPEED * dt;
+
    ctx.fillRect(o.x,0,o.w,o.top);
    ctx.fillRect(o.x,520-o.bottom,o.w,o.bottom);
+
+   // collision
+   if(player.x < o.x+o.w && player.x+16 > o.x &&
+      (player.y < o.top || player.y+22 > 520-o.bottom)){
+        over=true;
+   }
  });
 
- score++;
- ctx.fillText("Score "+score,10,20);
+ // ground
+ if(player.y > 520) over=true;
+
+ // score
+ score += dt*60;
+ ctx.fillText("Score: "+Math.floor(score),10,20);
 
  requestAnimationFrame(loop);
 }
-loop();
+requestAnimationFrame(loop);
 
-canvas.onclick=()=>{
- if(!started)started=true;
- else if(over)reset();
- else player.v=-10;
-};
+// TAP (FIXED)
+function tap(){
+ if(!started){ started=true; return; }
+ if(over){ reset(); return; }
+ player.v = JUMP; // ONLY jump, no auto fall bug
+}
+
+canvas.onclick=tap;
+canvas.addEventListener("touchstart",e=>{
+ e.preventDefault();
+ tap();
+},{passive:false});
 
 // ===== POPUP =====
 const popup=document.getElementById("popup");
@@ -196,33 +193,31 @@ document.getElementById("donateBtn").onclick=()=>popup.style.display="flex";
 function closePopup(){popup.style.display="none";}
 
 // ===== COPY =====
-function copyName(){navigator.clipboard.writeText("Morris Zoleta");alert("Copied");}
-function copyNumber(){navigator.clipboard.writeText("09289652830");alert("Copied");}
+function copyName(){
+ navigator.clipboard.writeText("Morris Zoleta");
+ alert("Name copied");
+}
+function copyNumber(){
+ navigator.clipboard.writeText("09289652830");
+ alert("Number copied");
+}
 
 // ===== PAYPAL =====
 function donateClick(){
- showReward();
  window.location.href="https://www.paypal.me/MorrisZoleta982";
 }
 
-// ===== REWARD =====
-function showReward(){
- let r=document.getElementById("reward");
- r.style.transform="translate(-50%,-50%) scale(1)";
- setTimeout(()=>r.style.transform="translate(-50%,-50%) scale(0)",2000);
-}
-
 // ===== FAKE FEED =====
-const names=["Juan","Maria","Alex","Chris","Luna"];
-function showFeed(){
+const names=["Juan","Maria","Alex","Chris"];
+function feed(){
  let f=document.getElementById("feed");
  let n=names[Math.floor(Math.random()*names.length)];
- let amount=[10,20,50,100][Math.floor(Math.random()*4)];
- f.innerText=n+" donated ₱"+amount+" 🎉";
+ let amt=[10,20,50][Math.floor(Math.random()*3)];
+ f.innerText=n+" donated ₱"+amt;
  f.style.opacity=1;
- setTimeout(()=>f.style.opacity=0,3000);
+ setTimeout(()=>f.style.opacity=0,2000);
 }
-setInterval(showFeed,5000);
+setInterval(feed,6000);
 </script>
 
 </body>
