@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Tap Game PRO SOUND</title>
+<title>Ultimate Tap Game PRO SOUND FIXED</title>
 
 <style>
 html,body{
@@ -83,6 +83,7 @@ canvas{
 <div id="popup">
   <div class="box">
     <h3>❤️ Support Me</h3>
+
     <button class="btn paypal" onclick="donateClick()">Pay via PayPal</button>
 
     <p class="info">Maya</p>
@@ -97,26 +98,54 @@ canvas{
 </div>
 
 <script>
-// ===== SOUND SYSTEM =====
-const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3");
-const hitSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3");
-const bgMusic = new Audio("https://assets.mixkit.co/music/preview/mixkit-arcade-game-opener-222.mp3");
+// ================= AUDIO SYSTEM (MOBILE FIXED) =================
+let jumpSound, hitSound, bgMusic;
+let audioUnlocked = false;
 
-bgMusic.loop = true;
-bgMusic.volume = 0.3;
-jumpSound.volume = 0.5;
-hitSound.volume = 0.6;
+function unlockAudio(){
+  if(audioUnlocked) return;
 
-let audioStarted = false;
+  jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3");
+  hitSound  = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3");
+  bgMusic   = new Audio("https://assets.mixkit.co/music/preview/mixkit-arcade-game-opener-222.mp3");
 
-function startAudio(){
-  if(!audioStarted){
-    bgMusic.play().catch(()=>{});
-    audioStarted = true;
-  }
+  bgMusic.loop = true;
+  bgMusic.volume = 0.3;
+  jumpSound.volume = 0.6;
+  hitSound.volume = 0.7;
+
+  // preload
+  jumpSound.load();
+  hitSound.load();
+  bgMusic.load();
+
+  // unlock trick (play then pause)
+  bgMusic.play().then(()=>{
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }).catch(()=>{});
+
+  audioUnlocked = true;
 }
 
-// ===== GAME =====
+function playJump(){
+  if(!audioUnlocked) return;
+  jumpSound.currentTime = 0;
+  jumpSound.play().catch(()=>{});
+}
+
+function playHit(){
+  if(!audioUnlocked) return;
+  hitSound.currentTime = 0;
+  hitSound.play().catch(()=>{});
+}
+
+function playMusic(){
+  if(!audioUnlocked) return;
+  bgMusic.play().catch(()=>{});
+}
+
+// ================= GAME =================
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -138,7 +167,7 @@ function reset(){
 }
 reset();
 
-// SPAWN
+// spawn obstacles
 setInterval(()=>{
   if(!started || over) return;
 
@@ -153,14 +182,13 @@ setInterval(()=>{
   });
 }, 1400);
 
-// LOOP
+// game loop
 function update(t){
   if(!last) last = t;
   let dt = (t - last)/1000;
   last = t;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
   ctx.font = "18px Arial";
   ctx.fillStyle = "black";
 
@@ -181,8 +209,8 @@ function update(t){
   player.v += GRAVITY * dt;
   player.v *= DRAG;
   if(player.v > MAX_FALL) player.v = MAX_FALL;
-  player.y += player.v * dt;
 
+  player.y += player.v * dt;
   if(player.y < 0) player.y = 0;
 
   // player
@@ -199,12 +227,12 @@ function update(t){
 
     if(player.x < o.x+o.w && player.x+16 > o.x &&
       (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
-        gameOver();
+        triggerGameOver();
     }
   });
 
   if(player.y > canvas.height){
-    gameOver();
+    triggerGameOver();
   }
 
   score += dt * 60;
@@ -213,21 +241,21 @@ function update(t){
   requestAnimationFrame(update);
 }
 
-// GAME OVER FUNCTION
-function gameOver(){
+// game over with sound
+function triggerGameOver(){
   if(!over){
     over = true;
-    hitSound.currentTime = 0;
-    hitSound.play();
+    playHit();
   }
 }
 
-// TAP
+// tap control
 function tap(){
-  startAudio();
+  unlockAudio();
 
   if(!started){
     started = true;
+    playMusic();
     return;
   }
 
@@ -237,9 +265,7 @@ function tap(){
   }
 
   player.v = JUMP;
-
-  jumpSound.currentTime = 0;
-  jumpSound.play();
+  playJump();
 }
 
 canvas.addEventListener("click", tap);
@@ -248,7 +274,7 @@ canvas.addEventListener("touchstart", e=>{
   tap();
 },{passive:false});
 
-// ===== DONATION =====
+// ================= DONATION =================
 const popup = document.getElementById("popup");
 const donateBtn = document.getElementById("donateBtn");
 
@@ -276,7 +302,7 @@ popup.addEventListener("click", e=>{
   if(e.target === popup) closePopup();
 });
 
-// START
+// start loop
 requestAnimationFrame(update);
 </script>
 
