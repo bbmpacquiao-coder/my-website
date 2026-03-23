@@ -1,93 +1,116 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ultimate Tap Game PRO</title>
 
 <style>
 html, body {
   margin: 0;
   overflow: hidden;
-  background: linear-gradient(#5c94fc, #cce6ff);
-  font-family: Arial;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#5c94fc,#8fd3ff);
 }
 
 /* GAME */
 canvas {
   display: block;
   margin: 10px auto;
-  background: #87ceeb;
-  border-radius: 12px;
+  background: linear-gradient(#87ceeb,#dff6ff);
+  border-radius: 18px;
   width: 92vw;
   max-width: 360px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 /* DONATE BUTTON */
 #donateBtn {
   position: fixed;
-  bottom: 80px;
+  bottom: 70px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 14px 22px;
+  padding: 15px 26px;
   font-size: 16px;
-  border-radius: 14px;
+  border-radius: 30px;
   border: none;
   background: linear-gradient(45deg,#ff416c,#ff4b2b);
   color: white;
-  z-index: 9999;
+  font-weight: bold;
+  box-shadow: 0 8px 25px rgba(255,75,43,0.5);
+  transition: 0.2s;
 }
+#donateBtn:active { transform: translateX(-50%) scale(0.95); }
 
-/* POPUP */
+/* POPUP BACKGROUND */
 #popup {
   position: fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background: rgba(0,0,0,0.7);
+  top:0;left:0;
+  width:100%;height:100%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
   display:none;
   justify-content:center;
   align-items:center;
 }
 
+/* POPUP BOX */
 .box {
-  background:white;
-  padding:20px;
-  border-radius:18px;
-  width:90%;
-  max-width:330px;
-  text-align:center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  padding: 22px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 330px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
 }
+
+/* TEXT */
+h2 { margin: 5px 0; }
+p { opacity: 0.8; }
 
 /* BUTTONS */
 .btn {
   display:block;
   width:100%;
   padding:14px;
-  margin:8px 0;
+  margin:10px 0;
   border:none;
   border-radius:12px;
-  font-size:16px;
+  font-size:15px;
   color:white;
+  font-weight:bold;
+  transition:0.2s;
 }
 
-.paypal { background:#0070ba; }
-.copyName { background:#444; }
-.copyNumber { background:#222; }
-.maya { background:#00c853; }
-.close { background:#ccc; color:black; }
+.btn:active { transform: scale(0.96); }
 
-/* INFO */
+.paypal { background: linear-gradient(45deg,#0070ba,#00a2ff); }
+.copyName { background: linear-gradient(45deg,#555,#333); }
+.copyNumber { background: linear-gradient(45deg,#222,#000); }
+.maya { background: linear-gradient(45deg,#00c853,#00e676); }
+.close { background:#ddd; color:black; }
+
+/* CARD STYLE */
+.card {
+  background: rgba(255,255,255,0.2);
+  padding:12px;
+  border-radius:12px;
+  margin:10px 0;
+  backdrop-filter: blur(6px);
+}
+
 .label {
-  font-size:13px;
-  color:#777;
+  font-size:12px;
+  opacity:0.8;
 }
 
 .value {
   font-size:18px;
   font-weight:bold;
-  margin-bottom:6px;
+  margin-top:4px;
 }
 </style>
 </head>
@@ -101,23 +124,27 @@ canvas {
 <div id="popup">
   <div class="box">
 
-    <h2>Support Me ❤️</h2>
-    <p>Even ₱10 helps 🙏</p>
+    <h2>❤️ Support Me</h2>
+    <p>Even ₱10 helps a lot 🙏</p>
 
     <button class="btn paypal" onclick="openPayPal()">Pay via PayPal</button>
 
-    <hr>
+    <hr style="opacity:0.3">
 
     <h3>Send via Maya</h3>
 
-    <!-- NAME SECTION -->
-    <div class="label">Name</div>
-    <div class="value">Morris Zoleta</div>
+    <!-- NAME CARD -->
+    <div class="card">
+      <div class="label">Name</div>
+      <div class="value">Morris Zoleta</div>
+    </div>
     <button class="btn copyName" onclick="copyName()">Copy Name</button>
 
-    <!-- NUMBER SECTION -->
-    <div class="label">Number</div>
-    <div class="value">09289652830</div>
+    <!-- NUMBER CARD -->
+    <div class="card">
+      <div class="label">Number</div>
+      <div class="value">09289652830</div>
+    </div>
     <button class="btn copyNumber" onclick="copyNumber()">Copy Number</button>
 
     <button class="btn maya" onclick="openMayaGuide()">How to Send</button>
@@ -127,7 +154,7 @@ canvas {
 </div>
 
 <script>
-// GAME (same)
+// GAME
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -162,14 +189,17 @@ function update(t){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  ctx.fillStyle="black";
+  ctx.font="18px Arial";
+
   if(!started){
-    ctx.fillText("TAP TO START",110,260);
+    ctx.fillText("Tap to Start",120,260);
     requestAnimationFrame(update);
     return;
   }
 
   if(over){
-    ctx.fillText("GAME OVER",120,240);
+    ctx.fillText("Game Over",120,240);
     ctx.fillText("Tap to Restart",100,270);
     requestAnimationFrame(update);
     return;
@@ -179,11 +209,13 @@ function update(t){
   player.v *= DRAG;
   player.y += player.v * dt;
 
-  ctx.fillStyle = "blue";
+  ctx.fillStyle = "#1e90ff";
   ctx.fillRect(player.x, player.y, 16, 22);
 
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
+
+    ctx.fillStyle = "#8B4513";
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
@@ -201,7 +233,7 @@ function update(t){
   requestAnimationFrame(update);
 }
 
-// TAP
+// CONTROLS
 function tap(){
   if(!started){ started = true; return; }
   if(over){ reset(); return; }
@@ -224,7 +256,7 @@ function openPayPal(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
 
-// COPY FUNCTIONS
+// COPY
 function copyName(){
   navigator.clipboard.writeText("Morris Zoleta");
   alert("Name copied 👍");
@@ -237,11 +269,11 @@ function copyNumber(){
 
 // GUIDE
 function openMayaGuide(){
-  alert("Open Maya → Send Money → Paste details → Send 💚");
+  alert("Open Maya → Send Money → Paste → Send 💚");
 }
 
 requestAnimationFrame(update);
 </script>
 
 </body>
-</html>
+</html> 
