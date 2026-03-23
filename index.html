@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap Game PRO FINAL</title>
+<title>Tap Game GOLD EDITION</title>
 
 <style>
 html,body{
@@ -44,61 +44,38 @@ canvas{
 <button id="donateBtn" onclick="donate()">💰 Support Me</button>
 
 <script>
-// ================= AUDIO ENGINE (SUPER RELIABLE) =================
+// ===== AUDIO (WORKING) =====
 let audioCtx;
-let unlocked = false;
 
 function initAudio(){
-  if(unlocked) return;
-
+  if(audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  // resume context (important for mobile)
   audioCtx.resume();
-
-  unlocked = true;
 }
 
-// SOUND GENERATORS (no external files = no blocking)
 function playJump(){
-  if(!audioCtx) return;
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.type = "square";
-  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.2);
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.frequency.value = 400;
+  g.gain.value = 0.2;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + 0.15);
 }
 
 function playHit(){
-  if(!audioCtx) return;
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.5);
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.frequency.value = 120;
+  g.gain.value = 0.3;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + 0.4);
 }
 
-// ================= GAME =================
+// ===== GAME =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -106,19 +83,22 @@ const GRAVITY = 700;
 const JUMP = -300;
 const SPEED = 130;
 
-let player, obstacles, score, started, over, last;
+let player, obstacles, coins, started, over, last;
+let startTime, elapsed;
 
 function reset(){
   player = { x:70, y:220, v:0 };
   obstacles = [];
-  score = 0;
+  coins = 0;
   started = false;
   over = false;
   last = 0;
+  startTime = 0;
+  elapsed = 0;
 }
 reset();
 
-// spawn obstacles
+// spawn
 setInterval(()=>{
   if(!started || over) return;
 
@@ -129,9 +109,17 @@ setInterval(()=>{
     x: canvas.width,
     w: 45,
     top: top,
-    bottom: canvas.height - (top + gap)
+    bottom: canvas.height - (top + gap),
+    passed:false
   });
 },1400);
+
+// format time
+function formatTime(sec){
+  let m = Math.floor(sec/60);
+  let s = Math.floor(sec%60);
+  return m + ":" + (s<10?"0"+s:s);
+}
 
 // loop
 function update(t){
@@ -140,7 +128,6 @@ function update(t){
   last = t;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
   ctx.font = "18px Arial";
   ctx.fillStyle = "black";
 
@@ -153,9 +140,13 @@ function update(t){
   if(over){
     ctx.fillText("Game Over",120,240);
     ctx.fillText("Tap to Restart",95,270);
+    ctx.fillText("Gold Earned: " + coins,100,300);
     requestAnimationFrame(update);
     return;
   }
+
+  // time
+  elapsed = (performance.now() - startTime)/1000;
 
   // physics
   player.v += GRAVITY * dt;
@@ -172,28 +163,34 @@ function update(t){
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
+    // collision
     if(player.x < o.x+o.w && player.x+16 > o.x &&
       (player.y < o.top || player.y+22 > canvas.height-o.bottom)){
-        triggerGameOver();
+        if(!over){
+          over = true;
+          playHit();
+        }
+    }
+
+    // earn coin when passed
+    if(!o.passed && o.x + o.w < player.x){
+      o.passed = true;
+      coins += 1;
     }
   });
 
   if(player.y > canvas.height){
-    triggerGameOver();
+    if(!over){
+      over = true;
+      playHit();
+    }
   }
 
-  score += dt*60;
-  ctx.fillText("Score: "+Math.floor(score),10,25);
+  // UI
+  ctx.fillText("Gold: " + coins, 10, 25);
+  ctx.fillText("Time: " + formatTime(elapsed), 240, 25);
 
   requestAnimationFrame(update);
-}
-
-// game over
-function triggerGameOver(){
-  if(!over){
-    over = true;
-    playHit();
-  }
 }
 
 // tap
@@ -202,6 +199,7 @@ function tap(){
 
   if(!started){
     started = true;
+    startTime = performance.now();
     return;
   }
 
@@ -220,12 +218,11 @@ canvas.addEventListener("touchstart", e=>{
   tap();
 },{passive:false});
 
-// donation
+// donate
 function donate(){
   window.location.href = "https://www.paypal.me/MorrisZoleta982";
 }
 
-// start loop
 requestAnimationFrame(update);
 </script>
 
