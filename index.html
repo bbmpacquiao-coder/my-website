@@ -1,278 +1,228 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Tap Game PRO</title>
+<title>Ultimate Tap Game VIRAL</title>
 
 <style>
 html, body {
-  margin: 0;
-  overflow: hidden;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#5c94fc,#8fd3ff);
+  margin:0;
+  overflow:hidden;
+  font-family:Segoe UI;
+  background:linear-gradient(135deg,#5c94fc,#8fd3ff);
 }
 
 /* GAME */
 canvas {
-  display: block;
-  margin: 10px auto;
-  background: linear-gradient(#87ceeb,#dff6ff);
-  border-radius: 18px;
-  width: 92vw;
-  max-width: 360px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  display:block;
+  margin:10px auto;
+  background:#dff6ff;
+  border-radius:20px;
+  width:92vw;
+  max-width:360px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
 }
 
-/* DONATE BUTTON */
+/* DONATE */
 #donateBtn {
-  position: fixed;
-  bottom: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 15px 26px;
-  font-size: 16px;
-  border-radius: 30px;
-  border: none;
-  background: linear-gradient(45deg,#ff416c,#ff4b2b);
-  color: white;
-  font-weight: bold;
-  box-shadow: 0 8px 25px rgba(255,75,43,0.5);
-  transition: 0.2s;
+  position:fixed;
+  bottom:70px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:16px 28px;
+  border:none;
+  border-radius:30px;
+  background:linear-gradient(45deg,#ff416c,#ff4b2b);
+  color:white;
+  font-weight:bold;
+  box-shadow:0 10px 30px rgba(255,75,43,0.6);
 }
-#donateBtn:active { transform: translateX(-50%) scale(0.95); }
 
-/* POPUP BACKGROUND */
+/* POPUP */
 #popup {
-  position: fixed;
+  position:fixed;
   top:0;left:0;
   width:100%;height:100%;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
+  background:rgba(0,0,0,0.6);
   display:none;
   justify-content:center;
   align-items:center;
 }
 
-/* POPUP BOX */
 .box {
-  background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(12px);
-  padding: 22px;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 330px;
-  text-align: center;
-  color: white;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(12px);
+  padding:20px;
+  border-radius:20px;
+  width:90%;
+  max-width:320px;
+  text-align:center;
+  color:white;
 }
-
-/* TEXT */
-h2 { margin: 5px 0; }
-p { opacity: 0.8; }
 
 /* BUTTONS */
 .btn {
-  display:block;
   width:100%;
   padding:14px;
-  margin:10px 0;
+  margin:8px 0;
   border:none;
   border-radius:12px;
-  font-size:15px;
   color:white;
   font-weight:bold;
-  transition:0.2s;
 }
 
-.btn:active { transform: scale(0.96); }
+.paypal {background:#0070ba;}
+.copy {background:#333;}
+.maya {background:#00c853;}
+.close {background:#ccc;color:black;}
 
-.paypal { background: linear-gradient(45deg,#0070ba,#00a2ff); }
-.copyName { background: linear-gradient(45deg,#555,#333); }
-.copyNumber { background: linear-gradient(45deg,#222,#000); }
-.maya { background: linear-gradient(45deg,#00c853,#00e676); }
-.close { background:#ddd; color:black; }
-
-/* CARD STYLE */
+/* CARDS */
 .card {
-  background: rgba(255,255,255,0.2);
-  padding:12px;
-  border-radius:12px;
-  margin:10px 0;
-  backdrop-filter: blur(6px);
+  background:rgba(255,255,255,0.2);
+  padding:10px;
+  border-radius:10px;
+  margin:8px 0;
 }
 
-.label {
-  font-size:12px;
-  opacity:0.8;
+/* DONATION FEED */
+#feed {
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.6);
+  color:white;
+  padding:8px 16px;
+  border-radius:20px;
+  font-size:14px;
+  opacity:0;
+  transition:0.5s;
 }
 
-.value {
-  font-size:18px;
-  font-weight:bold;
-  margin-top:4px;
+/* REWARD */
+#reward {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:white;
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
+  transition:0.3s;
 }
 </style>
 </head>
 
 <body>
 
+<div id="feed"></div>
+
 <canvas id="game" width="360" height="520"></canvas>
 <button id="donateBtn">💰 Support Me</button>
 
-<!-- POPUP -->
 <div id="popup">
   <div class="box">
-
     <h2>❤️ Support Me</h2>
-    <p>Even ₱10 helps a lot 🙏</p>
 
-    <button class="btn paypal" onclick="openPayPal()">Pay via PayPal</button>
+    <button class="btn paypal" onclick="donateClick()">Pay via PayPal</button>
 
-    <hr style="opacity:0.3">
+    <h3>Maya</h3>
 
-    <h3>Send via Maya</h3>
+    <div class="card">Name: Morris Zoleta</div>
+    <button class="btn copy" onclick="copyName()">Copy Name</button>
 
-    <!-- NAME CARD -->
-    <div class="card">
-      <div class="label">Name</div>
-      <div class="value">Morris Zoleta</div>
-    </div>
-    <button class="btn copyName" onclick="copyName()">Copy Name</button>
+    <div class="card">Number: 09289652830</div>
+    <button class="btn copy" onclick="copyNumber()">Copy Number</button>
 
-    <!-- NUMBER CARD -->
-    <div class="card">
-      <div class="label">Number</div>
-      <div class="value">09289652830</div>
-    </div>
-    <button class="btn copyNumber" onclick="copyNumber()">Copy Number</button>
-
-    <button class="btn maya" onclick="openMayaGuide()">How to Send</button>
     <button class="btn close" onclick="closePopup()">Close</button>
-
   </div>
 </div>
 
+<div id="reward">
+  <h3>🎉 Thank You!</h3>
+  <p>You unlocked bonus luck 🍀</p>
+</div>
+
 <script>
-// GAME
+// ===== GAME =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const GRAVITY = 800, JUMP = -250, DRAG = 0.95, SPEED = 130;
-let player, obstacles, score, started, over;
+let player={x:70,y:200,v:0},obs=[],score=0,started=false,over=false;
 
-function reset(){
-  player = { x:70, y:220, v:0 };
-  obstacles = [];
-  score = 0;
-  started = false;
-  over = false;
-}
-reset();
+function reset(){player.y=200;player.v=0;obs=[];score=0;started=false;over=false;}
 
 setInterval(()=>{
-  if(!started || over) return;
-  let gap = 160;
-  let top = Math.random()*180 + 60;
-  obstacles.push({
-    x: canvas.width,
-    w: 45,
-    top: top,
-    bottom: canvas.height - (top + gap)
-  });
-}, 1400);
+ if(!started||over)return;
+ let gap=150,top=Math.random()*200+50;
+ obs.push({x:360,w:40,top:top,bottom:520-(top+gap)});
+},1400);
 
-let last = 0;
-function update(t){
-  let dt = (t - last)/1000;
-  last = t;
+function loop(){
+ ctx.clearRect(0,0,360,520);
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(!started){ctx.fillText("Tap to Start",120,260);return requestAnimationFrame(loop);}
+ if(over){ctx.fillText("Game Over",120,260);return requestAnimationFrame(loop);}
 
-  ctx.fillStyle="black";
-  ctx.font="18px Arial";
+ player.v+=800*0.016;
+ player.y+=player.v*0.016;
 
-  if(!started){
-    ctx.fillText("Tap to Start",120,260);
-    requestAnimationFrame(update);
-    return;
-  }
+ ctx.fillRect(player.x,player.y,16,22);
 
-  if(over){
-    ctx.fillText("Game Over",120,240);
-    ctx.fillText("Tap to Restart",100,270);
-    requestAnimationFrame(update);
-    return;
-  }
+ obs.forEach(o=>{
+   o.x-=2;
+   ctx.fillRect(o.x,0,o.w,o.top);
+   ctx.fillRect(o.x,520-o.bottom,o.w,o.bottom);
+ });
 
-  player.v += GRAVITY * dt;
-  player.v *= DRAG;
-  player.y += player.v * dt;
+ score++;
+ ctx.fillText("Score "+score,10,20);
 
-  ctx.fillStyle = "#1e90ff";
-  ctx.fillRect(player.x, player.y, 16, 22);
+ requestAnimationFrame(loop);
+}
+loop();
 
-  obstacles.forEach(o=>{
-    o.x -= SPEED * dt;
+canvas.onclick=()=>{
+ if(!started)started=true;
+ else if(over)reset();
+ else player.v=-10;
+};
 
-    ctx.fillStyle = "#8B4513";
-    ctx.fillRect(o.x,0,o.w,o.top);
-    ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
+// ===== POPUP =====
+const popup=document.getElementById("popup");
+document.getElementById("donateBtn").onclick=()=>popup.style.display="flex";
+function closePopup(){popup.style.display="none";}
 
-    if(player.x < o.x+o.w && player.x+16 > o.x &&
-      (player.y < o.top || player.y+22 > canvas.height-o.bottom)){
-        over = true;
-    }
-  });
+// ===== COPY =====
+function copyName(){navigator.clipboard.writeText("Morris Zoleta");alert("Copied");}
+function copyNumber(){navigator.clipboard.writeText("09289652830");alert("Copied");}
 
-  if(player.y > canvas.height) over = true;
-
-  score += dt * 60;
-  ctx.fillText("Score: " + Math.floor(score), 10, 25);
-
-  requestAnimationFrame(update);
+// ===== PAYPAL =====
+function donateClick(){
+ showReward();
+ window.location.href="https://www.paypal.me/MorrisZoleta982";
 }
 
-// CONTROLS
-function tap(){
-  if(!started){ started = true; return; }
-  if(over){ reset(); return; }
-  player.v = JUMP;
+// ===== REWARD =====
+function showReward(){
+ let r=document.getElementById("reward");
+ r.style.transform="translate(-50%,-50%) scale(1)";
+ setTimeout(()=>r.style.transform="translate(-50%,-50%) scale(0)",2000);
 }
 
-canvas.addEventListener("click", tap);
-canvas.addEventListener("touchstart", e=>{
-  e.preventDefault();
-  tap();
-},{passive:false});
-
-// POPUP
-const popup = document.getElementById("popup");
-document.getElementById("donateBtn").onclick = ()=> popup.style.display="flex";
-function closePopup(){ popup.style.display="none"; }
-
-// PAYPAL
-function openPayPal(){
-  window.location.href = "https://www.paypal.me/MorrisZoleta982";
+// ===== FAKE FEED =====
+const names=["Juan","Maria","Alex","Chris","Luna"];
+function showFeed(){
+ let f=document.getElementById("feed");
+ let n=names[Math.floor(Math.random()*names.length)];
+ let amount=[10,20,50,100][Math.floor(Math.random()*4)];
+ f.innerText=n+" donated ₱"+amount+" 🎉";
+ f.style.opacity=1;
+ setTimeout(()=>f.style.opacity=0,3000);
 }
-
-// COPY
-function copyName(){
-  navigator.clipboard.writeText("Morris Zoleta");
-  alert("Name copied 👍");
-}
-
-function copyNumber(){
-  navigator.clipboard.writeText("09289652830");
-  alert("Number copied 👍");
-}
-
-// GUIDE
-function openMayaGuide(){
-  alert("Open Maya → Send Money → Paste → Send 💚");
-}
-
-requestAnimationFrame(update);
+setInterval(showFeed,5000);
 </script>
 
 </body>
