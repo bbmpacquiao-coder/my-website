@@ -32,15 +32,12 @@ canvas{
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// SETTINGS
 const GRAVITY = 0.5;
 const JUMP = -8;
 const SPEED = 2;
 
-// STATE
 let player, obstacles, gold, started, over, time;
 
-// RESET
 function reset(){
   player = { x:70, y:220, v:0 };
   obstacles = [];
@@ -51,7 +48,6 @@ function reset(){
 }
 reset();
 
-// SPAWN
 setInterval(()=>{
   if(!started || over) return;
 
@@ -67,14 +63,12 @@ setInterval(()=>{
   });
 },1400);
 
-// FORMAT TIME
 function formatTime(sec){
   let m = Math.floor(sec/60);
   let s = Math.floor(sec%60);
   return m + ":" + (s<10 ? "0"+s : s);
 }
 
-// LOOP
 function update(){
   ctx.clearRect(0,0,360,520);
 
@@ -95,17 +89,14 @@ function update(){
     return;
   }
 
-  // TIME
   time += 1/60;
 
-  // PLAYER
   player.v += GRAVITY;
   player.y += player.v;
 
   ctx.fillStyle = "#1e90ff";
   ctx.fillRect(player.x, player.y, 16, 22);
 
-  // OBSTACLES
   obstacles.forEach(o=>{
     o.x -= SPEED;
 
@@ -113,13 +104,11 @@ function update(){
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,520-o.bottom,o.w,o.bottom);
 
-    // COLLISION
     if(player.x < o.x+o.w && player.x+16 > o.x &&
       (player.y < o.top || player.y+22 > 520-o.bottom)){
         over = true;
     }
 
-    // GOLD
     if(!o.passed && o.x+o.w < player.x){
       o.passed = true;
       gold++;
@@ -130,14 +119,12 @@ function update(){
     over = true;
   }
 
-  // UI
   ctx.fillText("Gold: " + gold, 10, 25);
   ctx.fillText("Time: " + formatTime(time), 240, 25);
 
   requestAnimationFrame(update);
 }
 
-// TAP
 function tap(){
   if(!started){
     started = true;
@@ -158,7 +145,6 @@ canvas.addEventListener("touchstart", e=>{
   tap();
 },{passive:false});
 
-// START
 update();
 </script>
 
