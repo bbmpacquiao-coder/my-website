@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Tap Game VIRAL FIXED</title>
+<title>Ultimate Tap Game PRO</title>
 
 <style>
 html,body{
@@ -23,7 +23,7 @@ canvas{
   max-width:360px;
 }
 
-/* DONATE */
+/* DONATE BUTTON */
 #donateBtn{
   position:fixed;
   bottom:70px;
@@ -34,6 +34,8 @@ canvas{
   border-radius:30px;
   background:#ff4b2b;
   color:white;
+  font-weight:bold;
+  box-shadow:0 6px 20px rgba(0,0,0,0.3);
 }
 
 /* POPUP */
@@ -56,45 +58,59 @@ canvas{
   text-align:center;
 }
 
-/* FEED */
-#feed{
-  position:fixed;
-  top:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:black;
-  color:white;
-  padding:6px 12px;
-  border-radius:20px;
-  opacity:0;
-  transition:0.3s;
+/* BUTTONS */
+.btn{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border:none;
+  border-radius:10px;
+  font-size:15px;
+}
+
+.paypal{background:#0070ba;color:white;}
+.copy{background:#333;color:white;}
+.close{background:#ccc;}
+
+/* TEXT */
+.info{
+  margin:10px 0;
+  font-weight:bold;
 }
 </style>
 </head>
 
 <body>
 
-<div id="feed"></div>
-
 <canvas id="game" width="360" height="520"></canvas>
 <button id="donateBtn">💰 Support Me</button>
 
+<!-- POPUP -->
 <div id="popup">
   <div class="box">
-    <h3>Support ❤️</h3>
-    <button onclick="donateClick()">PayPal</button>
-    <p>Maya:</p>
-    <button onclick="copyName()">Copy Name</button>
-    <button onclick="copyNumber()">Copy Number</button>
-    <button onclick="closePopup()">Close</button>
+
+    <h3>❤️ Support Me</h3>
+
+    <button class="btn paypal" onclick="donateClick()">Pay via PayPal</button>
+
+    <p class="info">Maya</p>
+
+    <div class="info">Name: Morris Zoleta</div>
+    <button class="btn copy" onclick="copyName()">Copy Name</button>
+
+    <div class="info">Number: 09289652830</div>
+    <button class="btn copy" onclick="copyNumber()">Copy Number</button>
+
+    <button class="btn close" onclick="closePopup()">Close</button>
+
   </div>
 </div>
+
 <script>
-// ===== GAME FIXED PERFECT =====
+// ===== GAME =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// 🔥 PERFECT BALANCE
 const GRAVITY = 700;
 const JUMP = -300;
 const DRAG = 0.98;
@@ -117,7 +133,7 @@ reset();
 setInterval(()=>{
   if(!started || over) return;
 
-  let gap = 170; // easier gap
+  let gap = 170;
   let top = Math.random()*180 + 60;
 
   obstacles.push({
@@ -152,22 +168,21 @@ function update(t){
     return;
   }
 
-  // ===== PHYSICS =====
+  // physics
   player.v += GRAVITY * dt;
   player.v *= DRAG;
 
-  // limit falling speed (prevents fast drop bug)
   if(player.v > MAX_FALL) player.v = MAX_FALL;
 
   player.y += player.v * dt;
 
   if(player.y < 0) player.y = 0;
 
-  // PLAYER
+  // player
   ctx.fillStyle = "#1e90ff";
   ctx.fillRect(player.x, player.y, 16, 22);
 
-  // OBSTACLES
+  // obstacles
   obstacles.forEach(o=>{
     o.x -= SPEED * dt;
 
@@ -175,26 +190,23 @@ function update(t){
     ctx.fillRect(o.x,0,o.w,o.top);
     ctx.fillRect(o.x,canvas.height-o.bottom,o.w,o.bottom);
 
-    // softer collision (less unfair)
     if(player.x < o.x+o.w && player.x+16 > o.x &&
       (player.y < o.top-5 || player.y+22 > canvas.height-o.bottom+5)){
         over = true;
     }
   });
 
-  // ground
   if(player.y > canvas.height){
     over = true;
   }
 
-  // SCORE
   score += dt * 60;
   ctx.fillText("Score: " + Math.floor(score), 10, 25);
 
   requestAnimationFrame(update);
 }
 
-// TAP CONTROL
+// TAP
 function tap(){
   if(!started){
     started = true;
@@ -206,21 +218,47 @@ function tap(){
     return;
   }
 
-  player.v = JUMP; // 🔥 strong jump
+  player.v = JUMP;
 }
 
-// EVENTS
 canvas.addEventListener("click", tap);
 canvas.addEventListener("touchstart", e=>{
   e.preventDefault();
   tap();
 },{passive:false});
 
+// ===== DONATION SYSTEM =====
+const popup = document.getElementById("popup");
+const donateBtn = document.getElementById("donateBtn");
+
+donateBtn.onclick = ()=> popup.style.display = "flex";
+
+function closePopup(){
+  popup.style.display = "none";
+}
+
+function donateClick(){
+  window.location.href = "https://www.paypal.me/MorrisZoleta982";
+}
+
+function copyName(){
+  navigator.clipboard.writeText("Morris Zoleta");
+  alert("Name copied 👍");
+}
+
+function copyNumber(){
+  navigator.clipboard.writeText("09289652830");
+  alert("Number copied 👍");
+}
+
+// CLOSE ON OUTSIDE CLICK
+popup.addEventListener("click", e=>{
+  if(e.target === popup) closePopup();
+});
+
 // START
 requestAnimationFrame(update);
 </script>
- 
-  
 
 </body>
 </html>
